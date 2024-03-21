@@ -1,1 +1,2 @@
-from .error_schema import FileErrorSchema, DatabaseErrorSchema, ValidationErrorSchema, ValueErrorSchema
+from .base_error_schema import ErrorSchema
+from .fastapi_error_schema import FastAPIErrorSchema
