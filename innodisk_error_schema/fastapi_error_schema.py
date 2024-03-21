@@ -10,7 +10,6 @@ class FastAPIErrorSchema(ErrorSchema):
             "type": "validation_error",
             "msg": "Validation failed.",
         }
-        # Override default values with any additional arguments provided.
         defaults.update(kwargs)
         return cls(**defaults)
     
@@ -21,6 +20,5 @@ class FastAPIErrorSchema(ErrorSchema):
             "type": "value_error",
             "msg": "Value error.",
         }
-        # Override default values with any additional arguments provided.
         defaults.update(kwargs)
         return cls(**defaults)

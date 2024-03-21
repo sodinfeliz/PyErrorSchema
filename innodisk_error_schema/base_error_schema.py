@@ -1,12 +1,12 @@
 from typing import List, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ErrorSchema(BaseModel):
-    type: str = ""
-    loc: List[str] = list()
-    msg: str = ""
-    input: Dict = dict()
+    type: str = Field(default="")
+    loc: List[str] = Field(default_factory=list)
+    msg: str = Field(default="")
+    input: Dict = Field(default_factory=dict)
     
     def to_dict(self):
         return self.model_dump()
