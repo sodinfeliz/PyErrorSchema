@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyalchemyvalidator"
+name = "pyerrorschema"
 version = "0.1.0"
 license = {file = "LICENSE.txt"}
 description = "Error schema validator"
@@ -21,4 +21,4 @@ dependencies = [
 ]
 
 [project.urls]
-source = "https://github.com/sodinfeliz/PySchemaValidator"
+source = "https://github.com/sodinfeliz/PyErrorSchema"
