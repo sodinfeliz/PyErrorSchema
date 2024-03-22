@@ -8,6 +8,11 @@ class ErrorSchema(BaseModel):
     msg: str = Field(default="")
     input: Dict = Field(default_factory=dict)
     
+    def __new__(cls, *args, **kwargs):
+        if cls is ErrorSchema:
+            raise TypeError("ErrorSchema cannot be instantiated directly!")
+        return super().__new__(cls)
+
     def to_dict(self):
         return self.model_dump()
     
