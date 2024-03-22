@@ -1,12 +1,10 @@
-from typing import List, Dict
 from pydantic import BaseModel, Field
+from .utils import restrict_arguments
 
 
 class ErrorSchema(BaseModel):
     type: str = Field(default="")
-    loc: List[str] = Field(default_factory=list)
     msg: str = Field(default="")
-    input: Dict = Field(default_factory=dict)
     
     def __new__(cls, *args, **kwargs):
         if cls is ErrorSchema:
@@ -21,6 +19,7 @@ class ErrorSchema(BaseModel):
         extra = "forbid"  # Raise an error when extra fields are present.
     
     @classmethod
+    @restrict_arguments("type")
     def database_error(cls, **kwargs):
         """Factory method to create an instance for a database error."""
         defaults = {
@@ -31,6 +30,7 @@ class ErrorSchema(BaseModel):
         return cls(**defaults)
     
     @classmethod
+    @restrict_arguments("type")
     def file_error(cls, **kwargs):
         """Factory method to create an instance for a file error."""
         defaults = {
