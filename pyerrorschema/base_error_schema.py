@@ -33,7 +33,6 @@ class ErrorSchema(BaseModel):
         """Factory method to create an instance for a file error."""
         defaults = {
             "type": "file_error",
-            "loc": ["request"],
             "msg": "File processing failed.",
         }
         defaults.update(kwargs)
