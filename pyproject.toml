@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyerrorschema"
-version = "0.1.0"
+version = "0.1.1b1"
 license = {file = "LICENSE.txt"}
 description = "Error schema validator"
 authors = [{name = "Elliot Su", email = "sodinfeliz@google.com"}]
@@ -15,6 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     'Programming Language :: Python :: 3 :: Only',
     "Operating System :: OS Independent",
+    "Framework :: Pydantic :: 2",
 ]
 dependencies = [
     "pydantic>=2.6.4"
