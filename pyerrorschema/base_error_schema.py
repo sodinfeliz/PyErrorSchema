@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from .utils import restrict_arguments
 
 
 class ErrorSchema(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     type: str = Field(default="")
     msg: str = Field(default="")
     
@@ -13,10 +15,6 @@ class ErrorSchema(BaseModel):
 
     def to_dict(self):
         return self.model_dump()
-    
-    class Config:
-        """Pydantic model configuration."""
-        extra = "forbid"  # Raise an error when extra fields are present.
     
     @classmethod
     @restrict_arguments("type")
