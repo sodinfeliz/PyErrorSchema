@@ -31,3 +31,5 @@ testpaths = [
 ]
 minversion = "6.0"
 
+[tool.isort]
+profile = "black"
