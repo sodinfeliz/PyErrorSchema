@@ -23,3 +23,11 @@ dependencies = [
 
 [project.urls]
 source = "https://github.com/sodinfeliz/PyErrorSchema"
+
+[tool.pytest.ini_options]
+addopts = "--cov=pyerrorschema"
+testpaths = [
+    "tests"
+]
+minversion = "6.0"
+
