@@ -53,6 +53,15 @@ def test_fastapi_error_schema_value_error():
     assert error.loc == ["body"]
     assert error.input == {"data": "some data"}
 
+def test_fastapi_error_schema_docker_error():
+    error = FastAPIErrorSchema.docker_error(
+        loc=["request"], input={"data": "some data"}
+    )
+    assert error.type == "docker_error"
+    assert error.msg == "Docker operation failed."
+    assert error.loc == ["request"]
+    assert error.input == {"data": "some data"}
+
 
 def test_fastapi_error_schema_customized_error():
     error = FastAPIErrorSchema.customized_error(
