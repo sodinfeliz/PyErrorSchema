@@ -32,6 +32,17 @@ class FastAPIErrorSchema(ErrorSchema):
         return cls(**defaults)
     
     @classmethod
+    @restrict_arguments("type")
+    def docker_error(cls, **kwargs):
+        """Factory method to create an instance for a docker error."""
+        defaults = {
+            "type": "docker_error",
+            "msg": "Docker operation failed.",
+        }
+        defaults.update(kwargs)
+        return cls(**defaults)
+    
+    @classmethod
     def customized_error(cls, **kwargs):
         """Factory method to create an instance for a customized error."""
         return cls(**kwargs)
