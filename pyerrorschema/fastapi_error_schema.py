@@ -1,4 +1,5 @@
-from typing import List, Dict
+from typing import Dict, List
+
 from pydantic import Field
 
 from .base_error_schema import ErrorSchema
@@ -27,6 +28,17 @@ class FastAPIErrorSchema(ErrorSchema):
         defaults = {
             "type": "value_error",
             "msg": "Value error.",
+        }
+        defaults.update(kwargs)
+        return cls(**defaults)
+    
+    @classmethod
+    @restrict_arguments("type")
+    def docker_error(cls, **kwargs):
+        """Factory method to create an instance for a docker error."""
+        defaults = {
+            "type": "docker_error",
+            "msg": "Docker operation failed.",
         }
         defaults.update(kwargs)
         return cls(**defaults)

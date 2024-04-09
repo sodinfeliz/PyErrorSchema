@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyerrorschema"
-version = "0.1.1"
+version = "0.1.2"
 license = {file = "LICENSE.txt"}
 description = "Error schema validator"
 authors = [{name = "Elliot Su", email = "sodinfeliz@google.com"}]
@@ -23,3 +23,13 @@ dependencies = [
 
 [project.urls]
 source = "https://github.com/sodinfeliz/PyErrorSchema"
+
+[tool.pytest.ini_options]
+addopts = "--cov=pyerrorschema"
+testpaths = [
+    "tests"
+]
+minversion = "6.0"
+
+[tool.isort]
+profile = "black"
