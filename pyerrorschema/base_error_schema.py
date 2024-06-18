@@ -1,3 +1,6 @@
+import json
+from typing import List
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from .utils import restrict_arguments
@@ -17,6 +20,18 @@ class ErrorSchema(BaseModel):
     def to_dict(self):
         return self.model_dump()
     
+    def to_string(self) -> str:
+        """Convert the error schema to a string."""
+        return json.dumps(self.to_dict())
+    
+    @staticmethod
+    def wrapping_string(error_schemas: List["ErrorSchema"] = None) -> str:
+        """Factory method to create an instance for a wrapping string."""
+        result = []
+        for error_schema in error_schemas:
+            result.append(error_schema.to_string())
+        return f"[{', '.join(result)}]"
+        
     @classmethod
     @restrict_arguments("type")
     def database_error(cls, **kwargs):
