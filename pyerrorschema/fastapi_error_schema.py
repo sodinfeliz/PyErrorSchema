@@ -9,6 +9,8 @@ from .utils import restrict_arguments
 class FastAPIErrorSchema(ErrorSchema):
     loc: List[str] = Field(default_factory=list)
     input: Dict = Field(default_factory=dict)
+
+    ### Factory methods ###
     
     @classmethod
     @restrict_arguments("type")
