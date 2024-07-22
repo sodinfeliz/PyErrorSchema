@@ -3,7 +3,7 @@ from typing import Dict, List
 from .base_error_schema import ErrorSchema
 
 
-class ErrorSchemaGroup:
+class ErrGroup:
     def __init__(self, error_schemas = None):
         self._validate_instance(error_schemas)
         self.error_schemas: List[ErrorSchema] = error_schemas or []
