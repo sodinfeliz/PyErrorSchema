@@ -2,8 +2,8 @@ from typing import Dict, List
 
 from pydantic import Field
 
-from .base_error_schema import ErrorSchema
-from .utils import restrict_arguments
+from ..base_error_schema import ErrorSchema
+from ..utils import restrict_arguments
 
 
 class FastAPIErrorSchema(ErrorSchema):
