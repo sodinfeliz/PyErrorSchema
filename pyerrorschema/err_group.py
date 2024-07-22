@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from .base_error_schema import ErrorSchema
+from .err_base import ErrorSchema
 
 
 class ErrGroup:
