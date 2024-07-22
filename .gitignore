@@ -8,3 +8,8 @@ __pycache__/
 # Python virtualenvs #
 ######################
 venv/
+
+# Jupiter notebooks #
+#####################
+.ipynb_checkpoints/
+*.ipynb

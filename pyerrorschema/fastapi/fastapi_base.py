@@ -1,14 +1,17 @@
+from copy import deepcopy
 from typing import Dict, List
 
 from pydantic import Field
 
-from .base_error_schema import ErrorSchema
-from .utils import restrict_arguments
+from ..err_base import ErrorSchema
+from ..utils import restrict_arguments
 
 
 class FastAPIErrorSchema(ErrorSchema):
     loc: List[str] = Field(default_factory=list)
     input: Dict = Field(default_factory=dict)
+
+    ### Factory methods ###
     
     @classmethod
     @restrict_arguments("type")
@@ -47,3 +50,13 @@ class FastAPIErrorSchema(ErrorSchema):
     def customized_error(cls, **kwargs):
         """Factory method to create an instance for a customized error."""
         return cls(**kwargs)
+
+    @staticmethod
+    def frontend_variant(
+        error_schema: "FastAPIErrorSchema", 
+        text: str = "error"
+    ) -> "FastAPIErrorSchema":
+        """Convert the error schema to a frontend error schema."""
+        new_schema = deepcopy(error_schema)
+        new_schema.msg = text
+        return new_schema

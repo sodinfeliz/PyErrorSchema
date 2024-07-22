@@ -3,21 +3,23 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from pyerrorschema import FastAPIErrorSchema
-
+from pyerrorschema import ErrorSchema, FastAPIErrorSchema
 
 if __name__ == "__main__":
-    # Example usage of the FastAPIErrorSchema class.
-    err = FastAPIErrorSchema.database_error(
-        loc=["request", "body"],
-        input={'data_path': 'test'},
-    )
-    print(err.to_dict())
 
-    err = FastAPIErrorSchema.customized_error(
+    err1 = ErrorSchema.database_error(
+        msg="Database connection failed."
+    )
+
+    err2 = FastAPIErrorSchema.customized_error(
         type="customized_error",
         msg="Customized error.",
         loc=["request"],
         input={'test': 'test'},
     )
-    print(err.to_dict())
+
+    # Single error schema to string
+    print(err1.to_dict())
+
+    # Multiple error schemas to string
+    print(ErrorSchema.wrapping_string([err1, err2]))

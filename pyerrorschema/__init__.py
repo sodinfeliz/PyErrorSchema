@@ -1,5 +1,10 @@
-from .base_error_schema import ErrorSchema
-from .fastapi_error_schema import FastAPIErrorSchema
-from .utils import restrict_arguments
+from .err_base import ErrorSchema
+from .err_group import ErrGroup
+from .fastapi import FastAPIErrGroup, FastAPIErrorSchema
 
-__all__ = ["FastAPIErrorSchema", "ErrorSchema", "restrict_arguments"]
+__all__ = [
+    "FastAPIErrorSchema", 
+    "FastAPIErrGroup",
+    "ErrorSchema", 
+    "ErrGroup",
+]
