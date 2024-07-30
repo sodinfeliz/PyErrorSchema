@@ -12,6 +12,12 @@ class FastAPIErrorSchema(ErrorSchema):
     input: Dict = Field(default_factory=dict)
 
     ### Factory methods ###
+
+    def frontend_variant(self, msg: str = "error") -> "FastAPIErrorSchema":
+        """Convert the error schema to a frontend error schema."""
+        new_schema = deepcopy(self)
+        new_schema.msg = msg
+        return new_schema
     
     @classmethod
     @restrict_arguments("type")
@@ -50,13 +56,3 @@ class FastAPIErrorSchema(ErrorSchema):
     def customized_error(cls, **kwargs):
         """Factory method to create an instance for a customized error."""
         return cls(**kwargs)
-
-    @staticmethod
-    def frontend_variant(
-        error_schema: "FastAPIErrorSchema", 
-        text: str = "error"
-    ) -> "FastAPIErrorSchema":
-        """Convert the error schema to a frontend error schema."""
-        new_schema = deepcopy(error_schema)
-        new_schema.msg = text
-        return new_schema
