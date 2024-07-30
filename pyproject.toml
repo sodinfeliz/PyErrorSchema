@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyerrorschema"
-version = "1.0.0"
+version = "1.1.0"
 license = {file = "LICENSE.txt"}
 description = "Error schema validator"
 authors = [{name = "Elliot Su", email = "sodinfeliz@google.com"}]

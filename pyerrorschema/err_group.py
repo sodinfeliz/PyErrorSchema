@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Dict, List
 
 from .err_base import ErrorSchema
@@ -13,6 +14,14 @@ class ErrGroup:
 
     def __iter__(self):
         return iter(self.error_schemas)
+
+    def __getitem__(self, index):
+        return self.error_schemas[index]
+    
+    def __setitem__(self, index, value):
+        if not isinstance(value, ErrorSchema):
+            raise ValueError("The error schema must be an instance of ErrorSchema.")
+        self.error_schemas[index] = value
 
     def _validate_instance(self, errs):
         """Check if the error schemas are instances of ErrorSchema."""
@@ -31,6 +40,10 @@ class ErrGroup:
         """Convert the error schemas to a dictionary."""
         return [err.to_dict() for err in self.error_schemas]
 
+    def to_list(self) -> List[ErrorSchema]:
+        """Convert the error schemas to a list."""
+        return deepcopy(self.error_schemas)
+
     def append(self, error_schema: ErrorSchema) -> None:
         """Add an error schema to the group."""
         self._validate_instance(error_schema)
@@ -46,7 +59,3 @@ class ErrGroup:
     def clear(self) -> None:
         """Clear all error schemas from the group."""
         self.error_schemas.clear()
-    
-    def get_errors(self) -> List[ErrorSchema]:
-        """Get all error schemas from the group."""
-        return self.error_schemas

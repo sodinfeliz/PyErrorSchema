@@ -1,9 +1,16 @@
+from pyerrorschema.err_base import ErrorSchema
+
 from ..err_group import ErrGroup
 from .fastapi_base import FastAPIErrorSchema
 
 
 class FastAPIErrGroup(ErrGroup):
     """A group of FastAPIErrorSchema instances."""
+
+    def __setitem__(self, index, value):
+        if not isinstance(value, FastAPIErrorSchema):
+            raise ValueError("The error schema must be an instance of FastAPIErrorSchema.")
+        return super().__setitem__(index, value)
 
     def _validate_instance(self, errs):
         """Check if the error schemas are instances of FastAPIErrorSchema."""
