@@ -49,6 +49,10 @@ class ErrGroup:
         self._validate_instance(error_schema)
         self.error_schemas.append(error_schema)
 
+    def copy(self) -> "ErrGroup":
+        """Create a copy of the error group."""
+        return self.__class__(self.to_list())
+
     def extend(self, error_schemas: list) -> None:
         """Add a list of error schemas to the group."""
         if not isinstance(error_schemas, list):

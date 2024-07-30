@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import Field
 
@@ -13,10 +13,11 @@ class FastAPIErrorSchema(ErrorSchema):
 
     ### Factory methods ###
 
-    def frontend_variant(self, msg: str = "error") -> "FastAPIErrorSchema":
+    def frontend_variant(self, msg: Optional[str] = None) -> "FastAPIErrorSchema":
         """Convert the error schema to a frontend error schema."""
         new_schema = deepcopy(self)
-        new_schema.msg = msg
+        if msg is not None:
+            new_schema.msg = msg
         return new_schema
     
     @classmethod

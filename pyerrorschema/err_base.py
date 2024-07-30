@@ -18,6 +18,10 @@ class ErrorSchema(BaseModel):
     def to_string(self) -> str:
         """Convert the error schema to a string."""
         return json.dumps(self.to_dict())
+    
+    def copy(self) -> "ErrorSchema":
+        """Create a copy of the error schema."""
+        return self.__class__(**self.model_dump())
 
     @staticmethod
     def wrapping_string(error_schemas: List["ErrorSchema"]) -> str:
