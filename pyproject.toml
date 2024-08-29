@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyerrorschema"
-version = "1.1.0"
+version = "1.1.2"
 license = {file = "LICENSE.txt"}
 description = "Error schema validator"
 authors = [{name = "Elliot Su", email = "sodinfeliz@google.com"}]
@@ -31,5 +31,34 @@ testpaths = [
 ]
 minversion = "6.0"
 
-[tool.isort]
-profile = "black"
+[tool.mypy]
+exclude = [
+    "venv/",
+    "tests/"
+]
+
+[tool.ruff]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "C",   # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+
+ignore = [
+    "E501",  # line too long, handled by black
+    "E701",  # multiple statements on one line
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "W191",  # indentation contains tabs
+    "C408",  # rewrite as a literal
+    "F401",  # imported but unused
+    "F811",  # redefinition of unused
+    "B904",  # Using `raise error from exc`
+]
+
+[tool.ruff.isort]
+known-third-party = ["fastapi", "pydantic", "starlette"]
