@@ -1,9 +1,12 @@
 import json
-from typing import List
+from typing import Any, Dict, List
 
 from pydantic import BaseModel, ConfigDict, Field
+from typing_extensions import Self, TypeVar
 
 from .utils import restrict_arguments
+
+ErrorSchemaType = TypeVar("ErrorSchemaType", bound="ErrorSchema")
 
 
 class ErrorSchema(BaseModel):
@@ -12,7 +15,7 @@ class ErrorSchema(BaseModel):
     type: str = Field(default="")
     msg: str = Field(default="")
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
 
     def to_string(self) -> str:
@@ -23,8 +26,12 @@ class ErrorSchema(BaseModel):
         """Create a copy of the error schema."""
         return self.__class__(**self.model_dump())
 
+    def schema_copy(self) -> Self:
+        """Create a deep copy of the error schema."""
+        return self.__class__(**self.model_dump())
+
     @staticmethod
-    def wrapping_string(error_schemas: List["ErrorSchema"]) -> str:
+    def wrapping_string(error_schemas: List[ErrorSchemaType]) -> str:
         """Wraps the error schemas in a string representation.
 
         This method is used to wrap a list of error schemas in a string representation. The resulting string
@@ -42,12 +49,12 @@ class ErrorSchema(BaseModel):
                 raise ValueError("All elements in the list must be instances of ErrorSchema.")
         else:
             raise ValueError("The argument must be an instance of ErrorSchema or a list of ErrorSchema instances.")
-        
+
     ### Factory methods ###
 
     @classmethod
     @restrict_arguments("type")
-    def database_error(cls, **kwargs):
+    def database_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a database error."""
         defaults = {
             "type": "database_error",
@@ -58,7 +65,7 @@ class ErrorSchema(BaseModel):
 
     @classmethod
     @restrict_arguments("type")
-    def file_error(cls, **kwargs):
+    def file_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a file error."""
         defaults = {
             "type": "file_error",
