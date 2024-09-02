@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyerrorschema"
-version = "1.1.2"
+version = "1.1.4"
 license = {file = "LICENSE.txt"}
 description = "Error schema validator"
 authors = [{name = "Elliot Su", email = "sodinfeliz@google.com"}]
@@ -55,9 +55,6 @@ ignore = [
     "C901",  # too complex
     "W191",  # indentation contains tabs
     "C408",  # rewrite as a literal
-    "F401",  # imported but unused
-    "F811",  # redefinition of unused
-    "B904",  # Using `raise error from exc`
 ]
 
 [tool.ruff.isort]
