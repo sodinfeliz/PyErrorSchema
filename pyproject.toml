@@ -55,9 +55,6 @@ ignore = [
     "C901",  # too complex
     "W191",  # indentation contains tabs
     "C408",  # rewrite as a literal
-    "F401",  # imported but unused
-    "F811",  # redefinition of unused
-    "B904",  # Using `raise error from exc`
 ]
 
 [tool.ruff.isort]
