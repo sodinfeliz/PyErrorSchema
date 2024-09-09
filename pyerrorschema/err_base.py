@@ -35,6 +35,8 @@ class ErrorSchema(BaseModel):
 
         Args:
             error_schemas (List[ErrorSchema]): List of error schemas.
+
+        .. caution:: This method will be deprecated in the future.
         """
         if isinstance(error_schemas, ErrorSchema):
             error_schemas = [error_schemas]
