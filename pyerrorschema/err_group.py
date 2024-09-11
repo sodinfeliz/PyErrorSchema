@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, List
+from typing import Any, List
 
 from typing_extensions import Self
 
@@ -8,10 +8,10 @@ from .err_base import ErrorSchema
 
 class ErrGroup:
     def __init__(self) -> None:
-        self._error_schemas: List = []
+        self._error_schemas: list = []
 
     @property
-    def error_schemas(self) -> List:
+    def error_schemas(self) -> list:
         return self._error_schemas
 
     def copy(self) -> Self:
@@ -38,7 +38,14 @@ class ErrGroup:
 
     ## Methods for converting the error schemas ##
 
-    def to_dict(self) -> List[Dict]:
+    def to_dict(self) -> List[dict]:
+        """Convert the error schemas to a dictionary.
+
+        .. note:: This method is deprecated. Use `to_dicts` instead.
+        """
+        return [err.to_dict() for err in self._error_schemas]
+
+    def to_dicts(self) -> List[dict]:
         """Convert the error schemas to a dictionary."""
         return [err.to_dict() for err in self._error_schemas]
 
@@ -46,7 +53,7 @@ class ErrGroup:
         """Convert the error schemas to a string."""
         return f"[{', '.join(err.to_string() for err in self._error_schemas)}]"
 
-    def to_list(self) -> List:
+    def to_list(self) -> list:
         """Convert the error schemas to a list."""
         return deepcopy(self._error_schemas)
 
@@ -58,7 +65,7 @@ class ErrGroup:
             raise ValueError("The error schema must be an instance of ErrorSchema.")
         self._error_schemas.append(error_schema)
 
-    def extend(self, error_schemas: List) -> None:
+    def extend(self, error_schemas: list) -> None:
         """Add a list of error schemas to the group."""
         if not all(isinstance(err, ErrorSchema) for err in error_schemas):
             raise ValueError("All elements must be instances of ErrorSchema.")
@@ -68,4 +75,8 @@ class ErrGroup:
 
     def contains_type(self, error_type: str) -> bool:
         """Check if the error group contains an error schema with a specific type."""
-        return any(err.type == error_type for err in self._error_schemas)
+        return any(err.type == error_type.lower() for err in self._error_schemas)
+
+    def has_errors(self) -> bool:
+        """Check if the error group contains any error schemas."""
+        return bool(self._error_schemas)
