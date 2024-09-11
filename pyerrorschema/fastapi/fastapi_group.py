@@ -33,6 +33,13 @@ class FastAPIErrGroup(ErrGroup):
     ## Methods for converting the error schemas ##
 
     def to_dict(self, target: MsgType = "backend") -> List[dict]:
+        """Convert the error schemas to a dictionary.
+
+        .. note:: This method is deprecated. Use `to_dicts` instead.
+        """
+        return [err.to_dict(target) for err in self._error_schemas]
+
+    def to_dicts(self, target: MsgType = "backend") -> List[dict]:
         """Convert the error schemas to a dictionary."""
         return [err.to_dict(target) for err in self._error_schemas]
 
