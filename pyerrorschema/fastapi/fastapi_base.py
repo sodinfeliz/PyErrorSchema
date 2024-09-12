@@ -27,7 +27,7 @@ class FastAPIErrorSchema(ErrorSchema):
 
         if target == "frontend":
             error_dict.pop("loc")
-            error_dict.pop("input")
+            error_dict.pop("type")
             if error_dict["ui_msg"] is not None:
                 error_dict["msg"] = error_dict["ui_msg"]
 
