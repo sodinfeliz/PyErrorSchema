@@ -1,5 +1,4 @@
-from collections.abc import Iterator
-from typing import List
+from typing import Iterator, List
 
 from ..err_group import ErrGroup
 from ..types import MsgType
