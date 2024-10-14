@@ -40,7 +40,7 @@ class ErrorSchema(BaseModel):
         """
         if isinstance(error_schemas, ErrorSchema):
             error_schemas = [error_schemas]
-        elif isinstance(error_schemas, list):
+        if isinstance(error_schemas, list):
             if all(isinstance(err, ErrorSchema) for err in error_schemas):
                 return f"[{', '.join(err.to_string() for err in error_schemas)}]"
             else:
@@ -68,6 +68,28 @@ class ErrorSchema(BaseModel):
         defaults = {
             "type": "file_error",
             "msg": "File processing failed.",
+        }
+        defaults.update(kwargs)
+        return cls(**defaults)
+
+    @classmethod
+    @restrict_arguments("type")
+    def runtime_error(cls, **kwargs) -> Self:
+        """Factory method to create an instance for a runtime error."""
+        defaults = {
+            "type": "runtime_error",
+            "msg": "Runtime error occurred.",
+        }
+        defaults.update(kwargs)
+        return cls(**defaults)
+
+    @classmethod
+    @restrict_arguments("type")
+    def parse_error(cls, **kwargs) -> Self:
+        """Factory method to create an instance for a parse error."""
+        defaults = {
+            "type": "parse_error",
+            "msg": "Parse error occurred.",
         }
         defaults.update(kwargs)
         return cls(**defaults)
