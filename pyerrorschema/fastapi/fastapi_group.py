@@ -1,4 +1,7 @@
-from typing import Iterator, List
+from copy import deepcopy
+from typing import Iterator, List, Union
+
+from typing_extensions import Self
 
 from ..err_group import ErrGroup
 from ..types import MsgType
@@ -46,6 +49,10 @@ class FastAPIErrGroup(ErrGroup):
         """Convert the error schemas to a string."""
         return f"[{', '.join(err.to_string(target) for err in self._error_schemas)}]"
 
+    def to_list(self) -> List[FastAPIErrorSchema]:
+        """Convert the error schemas to a list."""
+        return deepcopy(self._error_schemas)
+
     ## Methods for modifying the error schemas ##
 
     def append(self, error_schema: FastAPIErrorSchema) -> None:
@@ -54,13 +61,44 @@ class FastAPIErrGroup(ErrGroup):
             raise ValueError("The error schema must be an instance of FastAPIErrorSchema.")
         self._error_schemas.append(error_schema)
 
-    def extend(self, error_schemas: List[FastAPIErrorSchema]) -> None:
-        """Add a list of error schemas to the group."""
-        if not all(isinstance(err, FastAPIErrorSchema) for err in error_schemas):
-            raise ValueError("All elements must be instances of FastAPIErrorSchema.")
-        self._error_schemas.extend(error_schemas)
+    def extend(self, error_schemas: Union[List[FastAPIErrorSchema], Self]) -> None:
+        """Extend the error schemas with a list of error schemas."""
+        if isinstance(error_schemas, FastAPIErrGroup):
+            self._error_schemas.extend(error_schemas.to_list())
+        elif isinstance(error_schemas, list):
+            if not all(isinstance(err, FastAPIErrorSchema) for err in error_schemas):
+                raise ValueError("All elements must be instances of FastAPIErrorSchema.")
+            self._error_schemas.extend(error_schemas)
+        else:
+            raise ValueError("The argument must be a list or an instance of FastAPIErrGroup.")
+
+    ## Special methods for FastAPIErrGroup ##
 
     def append_loc(self, loc: str) -> None:
-        """Globally append a location to all error schemas in the group."""
+        """Globally append a location to all error schemas in the group.
+
+        Args:
+            loc (str): The location to append.
+        """
         for err in self._error_schemas:
             err.loc.append(loc)
+
+    def extend_loc(self, locs: List[str]) -> None:
+        """Globally extend the locations of all error schemas in the group.
+
+        Args:
+            locs (List[str]): The locations to extend.
+        """
+        for err in self._error_schemas:
+            err.loc.extend(locs)
+
+    def update_input(self, input_dict: dict, overwrite: bool = False) -> None:
+        """Globally update input data for all error schemas in the group.
+
+        Args:
+            input_dict (dict): The input data to update or assign.
+            overwrite (bool): If True, completely replace existing input data.
+                              If False, merge with existing input data.
+        """
+        for err in self._error_schemas:
+            err.input = input_dict if overwrite else {**err.input, **input_dict}
