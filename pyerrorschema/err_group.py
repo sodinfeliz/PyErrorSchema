@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, List
+from typing import Any, List, Union
 
 from typing_extensions import Self
 
@@ -65,11 +65,16 @@ class ErrGroup:
             raise ValueError("The error schema must be an instance of ErrorSchema.")
         self._error_schemas.append(error_schema)
 
-    def extend(self, error_schemas: list) -> None:
+    def extend(self, error_schemas: Union[list, Self]) -> None:
         """Add a list of error schemas to the group."""
-        if not all(isinstance(err, ErrorSchema) for err in error_schemas):
-            raise ValueError("All elements must be instances of ErrorSchema.")
-        self._error_schemas.extend(error_schemas)
+        if isinstance(error_schemas, ErrGroup):
+            self._error_schemas.extend(error_schemas.to_list())
+        elif isinstance(error_schemas, list):
+            if not all(isinstance(err, ErrorSchema) for err in error_schemas):
+                raise ValueError("All elements must be instances of ErrorSchema.")
+            self._error_schemas.extend(error_schemas)
+        else:
+            raise ValueError("The argument must be a list or an instance of ErrGroup.")
 
     ## Other utility methods ##
 
