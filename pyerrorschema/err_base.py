@@ -1,3 +1,4 @@
+import inspect
 import json
 import textwrap
 from typing import Any, Dict, List
@@ -34,6 +35,14 @@ class ErrorSchema(BaseModel):
     def schema_copy(self) -> Self:
         """Create a deep copy of the error schema."""
         return self.__class__(**self.model_dump())
+
+    @classmethod
+    def list_available_errors(cls) -> List[str]:
+        """List all available error types."""
+        return [
+            name for name, _ in inspect.getmembers(cls, predicate=inspect.ismethod)
+            if name.endswith("_error") and not name.startswith("_")
+        ]
 
     @staticmethod
     def wrapping_string(error_schemas: List[ErrorSchemaType]) -> str:
