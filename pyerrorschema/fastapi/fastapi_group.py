@@ -18,9 +18,6 @@ class FastAPIErrGroup(ErrGroup):
     def __init__(self) -> None:
         self._error_schemas: List[FastAPIErrorSchema] = []
 
-    def __repr__(self) -> str:
-        return f"FastAPIErrGroup(len={len(self)})"
-
     def __iter__(self) -> Iterator[FastAPIErrorSchema]:
         return iter(self._error_schemas)
 
@@ -70,7 +67,10 @@ class FastAPIErrGroup(ErrGroup):
                 raise ValueError("All elements must be instances of FastAPIErrorSchema.")
             self._error_schemas.extend(error_schemas)
         else:
-            raise ValueError("The argument must be a list or an instance of FastAPIErrGroup.")
+            raise ValueError(
+                "The argument must be a list of FastAPIErrorSchema "
+                "instances or an instance of FastAPIErrGroup."
+            )
 
     ## Special methods for FastAPIErrGroup ##
 

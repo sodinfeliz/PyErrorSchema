@@ -1,3 +1,4 @@
+import textwrap
 from copy import deepcopy
 from typing import Any, List, Union
 
@@ -21,6 +22,11 @@ class ErrGroup:
     def clear(self) -> None:
         """Clear all error schemas from the group."""
         self._error_schemas.clear()
+
+    def __repr__(self) -> str:
+        errors_repr = ',\n'.join(repr(error) for error in self._error_schemas)
+        indented_errors = textwrap.indent(errors_repr, '    ')
+        return f"{self.__class__.__name__}(\n{indented_errors}\n)"
 
     def __len__(self) -> int:
         return len(self._error_schemas)
