@@ -17,6 +17,10 @@ class FastAPIErrorSchema(ErrorSchema):
     def to_dict(self, target: MsgType = "backend") -> Dict[str, Any]:
         """Convert the error schema to a dictionary.
 
+        If target is "frontend", only the fields `msg` and `input` are included, and
+        if `ui_msg` is not None, the field `msg` is overwritten by `ui_msg`. If target
+        is "backend", all fields are included, except for `ui_msg`.
+
         Args:
             target (MsgType): The target of the error message. The default is "backend".
 
@@ -61,36 +65,21 @@ class FastAPIErrorSchema(ErrorSchema):
     @restrict_arguments("type")
     def validation_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a validation error."""
-        defaults: Dict[str, Any] = {
-            "type": "validation_error",
-            "msg": "Validation failed.",
-        }
-        defaults.update(kwargs)
-        return cls(**defaults)
+        return cls._create_error("validation_error", "Validation error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
     def value_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a value error."""
-        defaults: Dict[str, Any] = {
-            "type": "value_error",
-            "msg": "Value error.",
-        }
-        defaults.update(kwargs)
-        return cls(**defaults)
+        return cls._create_error("value_error", "Value error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
     def docker_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a docker error."""
-        defaults: Dict[str, Any] = {
-            "type": "docker_error",
-            "msg": "Docker operation failed.",
-        }
-        defaults.update(kwargs)
-        return cls(**defaults)
+        return cls._create_error("docker_error", "Docker error occurred.", **kwargs)
 
     @classmethod
     def customized_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a customized error."""
-        return cls(**kwargs)
+        return cls._create_error("customized_error", "Customized error occurred.", **kwargs)

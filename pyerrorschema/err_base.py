@@ -1,4 +1,5 @@
 import json
+import textwrap
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -14,6 +15,14 @@ class ErrorSchema(BaseModel):
 
     type: str = Field(default="")
     msg: str = Field(default="")
+
+    def __repr__(self) -> str:
+        attrs = [f"{k}={repr(v)}" for k, v in self.__dict__.items() if not k.startswith('_')]
+        attrs_str = textwrap.indent(',\n'.join(attrs), '    ')
+        return f"{self.__class__.__name__}(\n{attrs_str}\n)"
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
@@ -51,45 +60,35 @@ class ErrorSchema(BaseModel):
     ### Factory methods ###
 
     @classmethod
-    @restrict_arguments("type")
-    def database_error(cls, **kwargs) -> Self:
-        """Factory method to create an instance for a database error."""
+    def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
+        """Base factory method to create an instance for an error."""
         defaults = {
-            "type": "database_error",
-            "msg": "Database operation failed.",
+            "type": error_type,
+            "msg": default_msg,
         }
         defaults.update(kwargs)
         return cls(**defaults)
+
+    @classmethod
+    @restrict_arguments("type")
+    def database_error(cls, **kwargs) -> Self:
+        """Factory method to create an instance for a database error."""
+        return cls._create_error("database_error", "Database error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
     def file_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a file error."""
-        defaults = {
-            "type": "file_error",
-            "msg": "File processing failed.",
-        }
-        defaults.update(kwargs)
-        return cls(**defaults)
+        return cls._create_error("file_error", "File error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
     def runtime_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a runtime error."""
-        defaults = {
-            "type": "runtime_error",
-            "msg": "Runtime error occurred.",
-        }
-        defaults.update(kwargs)
-        return cls(**defaults)
+        return cls._create_error("runtime_error", "Runtime error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
     def parse_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a parse error."""
-        defaults = {
-            "type": "parse_error",
-            "msg": "Parse error occurred.",
-        }
-        defaults.update(kwargs)
-        return cls(**defaults)
+        return cls._create_error("parse_error", "Parse error occurred.", **kwargs)

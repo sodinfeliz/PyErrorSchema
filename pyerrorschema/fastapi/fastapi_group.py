@@ -18,9 +18,6 @@ class FastAPIErrGroup(ErrGroup):
     def __init__(self) -> None:
         self._error_schemas: List[FastAPIErrorSchema] = []
 
-    def __repr__(self) -> str:
-        return f"FastAPIErrGroup(len={len(self)})"
-
     def __iter__(self) -> Iterator[FastAPIErrorSchema]:
         return iter(self._error_schemas)
 
