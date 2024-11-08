@@ -84,6 +84,10 @@ class ErrGroup:
 
     ## Other utility methods ##
 
+    def concat_messages(self, separator: str = ';') -> str:
+        """Concatenate the messages of the error schemas in the group."""
+        return f'{separator} '.join(err.msg for err in self._error_schemas)
+
     def contains_type(self, error_type: str) -> bool:
         """Check if the error group contains an error schema with a specific type."""
         return any(err.type == error_type.lower() for err in self._error_schemas)
