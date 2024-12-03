@@ -71,12 +71,14 @@ class ErrorSchema(BaseModel):
     @classmethod
     def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
         """Base factory method to create an instance for an error."""
-        defaults = {
-            "type": error_type,
-            "msg": default_msg,
-        }
-        defaults.update(kwargs)
-        return cls(**defaults)
+        readable_error_type = error_type.replace("_", " ").capitalize()
+        msg = kwargs.pop("msg", default_msg)
+
+        return cls(
+            type=error_type,
+            msg=f"{readable_error_type}: {msg}",
+            **kwargs,
+        )
 
     @classmethod
     @restrict_arguments("type")

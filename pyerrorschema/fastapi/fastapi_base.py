@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import Field
 from typing_extensions import Self
@@ -62,6 +62,21 @@ class FastAPIErrorSchema(ErrorSchema):
         return modified_schema
 
     @classmethod
+    def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
+        """Base factory method to create an instance for an error."""
+        readable_error_type = error_type.replace("_", " ").capitalize()
+        msg = kwargs.pop("msg", default_msg)
+
+        if "ui_msg" in kwargs:
+            kwargs["ui_msg"] = f"{readable_error_type} occurred while {kwargs['ui_msg']}."
+
+        return cls(
+            type=error_type,
+            msg=f"{readable_error_type}: {msg}",
+            **kwargs,
+        )
+
+    @classmethod
     @restrict_arguments("type")
     def validation_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a validation error."""
@@ -82,4 +97,23 @@ class FastAPIErrorSchema(ErrorSchema):
     @classmethod
     def customized_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a customized error."""
-        return cls._create_error("customized_error", "Customized error occurred.", **kwargs)
+        error_type = kwargs.pop("type", "customized_error")
+        return cls._create_error(error_type, "Customized error occurred.", **kwargs)
+
+    @classmethod
+    def from_exception(cls, exception: Exception, **kwargs) -> Self:
+        """Factory method to create an instance for an exception."""
+        exception_mapping: Dict[type[Exception], Callable[[], Self]] = {
+            ValueError: cls.value_error,
+            KeyError: cls.value_error,
+            FileExistsError: cls.file_error,
+            FileNotFoundError: cls.file_error,
+        }
+
+        error_factory = exception_mapping.get(type(exception), cls.customized_error)
+        if "msg" not in kwargs:
+            kwargs["msg"] = str(exception)
+        if error_factory.__name__ == "customized_error":
+            kwargs["type"] = type(exception).__name__
+
+        return error_factory(**kwargs)
