@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from ..err_base import ErrorSchema
+from ..base.err_base import ErrorSchema
 from ..types import MsgType
 from ..utils import restrict_arguments
 

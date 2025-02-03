@@ -4,7 +4,7 @@ from typing import Any, List, Union
 
 from typing_extensions import Self
 
-from .err_base import ErrorSchema
+from ..base.err_base import ErrorSchema
 
 
 class ErrGroup:
@@ -43,13 +43,6 @@ class ErrGroup:
         self._error_schemas[index] = value
 
     ## Methods for converting the error schemas ##
-
-    def to_dict(self) -> List[dict]:
-        """Convert the error schemas to a dictionary.
-
-        .. note:: This method is deprecated. Use `to_dicts` instead.
-        """
-        return [err.to_dict() for err in self._error_schemas]
 
     def to_dicts(self) -> List[dict]:
         """Convert the error schemas to a dictionary."""

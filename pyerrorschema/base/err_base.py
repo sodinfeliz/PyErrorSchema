@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self, TypeVar
 
-from .utils import restrict_arguments
+from ..utils import restrict_arguments
 
 ErrorSchemaType = TypeVar("ErrorSchemaType", bound="ErrorSchema")
 
@@ -43,28 +43,6 @@ class ErrorSchema(BaseModel):
             name for name, _ in inspect.getmembers(cls, predicate=inspect.ismethod)
             if name.endswith("_error") and not name.startswith("_")
         ]
-
-    @staticmethod
-    def wrapping_string(error_schemas: List[ErrorSchemaType]) -> str:
-        """Wraps the error schemas in a string representation.
-
-        This method is used to wrap a list of error schemas in a string representation. The resulting string
-        is a JSON array of error schemas. The error schemas must be instances of ErrorSchema.
-
-        Args:
-            error_schemas (List[ErrorSchema]): List of error schemas.
-
-        .. caution:: This method will be deprecated in the future.
-        """
-        if isinstance(error_schemas, ErrorSchema):
-            error_schemas = [error_schemas]
-        if isinstance(error_schemas, list):
-            if all(isinstance(err, ErrorSchema) for err in error_schemas):
-                return f"[{', '.join(err.to_string() for err in error_schemas)}]"
-            else:
-                raise ValueError("All elements in the list must be instances of ErrorSchema.")
-        else:
-            raise ValueError("The argument must be an instance of ErrorSchema or a list of ErrorSchema instances.")
 
     ### Factory methods ###
 
