@@ -84,12 +84,6 @@ class FastAPIErrorSchema(ErrorSchema):
 
     @classmethod
     @restrict_arguments("type")
-    def value_error(cls, **kwargs) -> Self:
-        """Factory method to create an instance for a value error."""
-        return cls._create_error("value_error", "Value error occurred.", **kwargs)
-
-    @classmethod
-    @restrict_arguments("type")
     def docker_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a docker error."""
         return cls._create_error("docker_error", "Docker error occurred.", **kwargs)

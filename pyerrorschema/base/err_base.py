@@ -81,3 +81,9 @@ class ErrorSchema(BaseModel):
     def parse_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a parse error."""
         return cls._create_error("parse_error", "Parse error occurred.", **kwargs)
+
+    @classmethod
+    @restrict_arguments("type")
+    def value_error(cls, **kwargs) -> Self:
+        """Factory method to create an instance for a value error."""
+        return cls._create_error("value_error", "Value error occurred.", **kwargs)
