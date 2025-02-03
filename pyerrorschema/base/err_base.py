@@ -40,7 +40,8 @@ class ErrorSchema(BaseModel):
     def list_available_errors(cls) -> List[str]:
         """List all available error types."""
         return [
-            name for name, _ in inspect.getmembers(cls, predicate=inspect.ismethod)
+            name
+            for name, _ in inspect.getmembers(cls, predicate=inspect.ismethod)
             if name.endswith("_error") and not name.startswith("_")
         ]
 
@@ -48,7 +49,23 @@ class ErrorSchema(BaseModel):
 
     @classmethod
     def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
-        """Base factory method to create an instance for an error."""
+        """Base factory method to create an instance for an error.
+
+        It will format the error message be like:
+        <readable_error_type>: <msg>
+
+        where <readable_error_type> is the error type with underscores replaced
+        by spaces and capitalized, e.g. "validation_error" -> "Validation error",
+        and <msg> is the msg argument if provided, otherwise it will be the default_msg.
+
+        Args:
+            error_type (str): The type of the error.
+            default_msg (str): The default message of the error.
+            **kwargs: Additional keyword arguments to pass to the error schema.
+
+        Returns:
+            ErrorSchema: The error schema instance.
+        """
         readable_error_type = error_type.replace("_", " ").capitalize()
         msg = kwargs.pop("msg", default_msg)
 

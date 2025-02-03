@@ -17,9 +17,9 @@ class FastAPIErrorSchema(ErrorSchema):
     def to_dict(self, target: MsgType = "backend") -> Dict[str, Any]:
         """Convert the error schema to a dictionary.
 
-        If target is "frontend", only the fields `msg` and `input` are included, and
-        if `ui_msg` is not None, the field `msg` is overwritten by `ui_msg`. If target
-        is "backend", all fields are included, except for `ui_msg`.
+        - For target "backend": include all fields except `ui_msg`.
+        - For target "frontend": include only `msg` and `input`. If `ui_msg` is provided,
+          its value will override `msg`.
 
         Args:
             target (MsgType): The target of the error message. The default is "backend".
@@ -27,16 +27,14 @@ class FastAPIErrorSchema(ErrorSchema):
         Returns:
             error_dict (dict[str, Any]): The error schema as a dictionary.
         """
-        error_dict = self.model_dump()
 
         if target == "frontend":
-            error_dict.pop("loc")
-            error_dict.pop("type")
-            if error_dict["ui_msg"] is not None:
-                error_dict["msg"] = error_dict["ui_msg"]
+            return {
+                "msg": self.ui_msg or self.msg,
+                "input": self.input,
+            }
 
-        error_dict.pop("ui_msg")
-        return error_dict
+        return self.model_dump(exclude={"ui_msg"})
 
     def to_string(self, target: MsgType = "backend") -> str:
         """Convert the error schema to a string.
@@ -51,24 +49,14 @@ class FastAPIErrorSchema(ErrorSchema):
 
     ### Factory methods ###
 
-    def frontend_variant(self, msg: Optional[str] = None) -> Self:
-        """Convert the error schema to a frontend error schema.
-
-        .. caution:: This method will be deprecated in the future.
-        """
-        modified_schema = self.schema_copy()
-        if msg is not None:
-            modified_schema.msg = msg
-        return modified_schema
-
     @classmethod
     def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
         """Base factory method to create an instance for an error."""
         readable_error_type = error_type.replace("_", " ").capitalize()
         msg = kwargs.pop("msg", default_msg)
 
-        if "ui_msg" in kwargs:
-            kwargs["ui_msg"] = f"{readable_error_type} occurred while {kwargs['ui_msg']}."
+        # if "ui_msg" in kwargs:
+        #     kwargs["ui_msg"] = f"{readable_error_type} occurred while {kwargs['ui_msg']}."
 
         return cls(
             type=error_type,
