@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 from typing_extensions import Self
@@ -52,16 +52,30 @@ class FastAPIErrorSchema(ErrorSchema):
 
     @classmethod
     def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
-        """Base factory method to create an instance for an error."""
-        readable_error_type = error_type.replace("_", " ").capitalize()
-        msg = kwargs.pop("msg", default_msg).capitalize().strip()
-        if "ui_msg" not in kwargs:
-            kwargs["ui_msg"] = msg
+        """Base factory method to create an instance for an error.
+
+        It will format the error message be like:
+        <readable_error_type>: <msg>
+
+        where <readable_error_type> is the error type with underscores replaced
+        by spaces and capitalized, e.g. "validation_error" -> "Validation error".
+        If the "exc" argument is provided, it will be used as the error message.
+        Otherwise, the "msg" argument will be used as the error message.
+        """
+
+        if "exc" in kwargs:
+            msg = kwargs.pop("exc").__str__()
+            kwargs["ui_msg"] = kwargs.pop("msg", default_msg).capitalize().strip()
+        else:
+            msg = kwargs.pop("msg", default_msg)
+            kwargs["ui_msg"] = msg.capitalize().strip()
+
+        pretty_type = error_type.replace("_", " ").capitalize()
         msg = msg[0].lower() + msg[1:]
 
         return cls(
             type=error_type,
-            msg=f"{readable_error_type}: {msg}",
+            msg=f"{pretty_type}: {msg}",
             **kwargs,
         )
 
@@ -83,20 +97,8 @@ class FastAPIErrorSchema(ErrorSchema):
         error_type = kwargs.pop("type", "customized_error")
         return cls._create_error(error_type, "Customized error occurred.", **kwargs)
 
-    @classmethod
-    def from_exception(cls, exception: Exception, **kwargs) -> Self:
-        """Factory method to create an instance for an exception."""
-        exception_mapping: Dict[type[Exception], Callable[[], Self]] = {
-            ValueError: cls.value_error,
-            KeyError: cls.value_error,
-            FileExistsError: cls.file_error,
-            FileNotFoundError: cls.file_error,
-        }
+    ## Subclasses ##
 
-        error_factory = exception_mapping.get(type(exception), cls.customized_error)
-        if "msg" not in kwargs:
-            kwargs["msg"] = str(exception)
-        if error_factory.__name__ == "customized_error":
-            kwargs["type"] = type(exception).__name__
+    class File(ErrorSchema.File): ...
 
-        return error_factory(**kwargs)
+    class DB(ErrorSchema.DB): ...

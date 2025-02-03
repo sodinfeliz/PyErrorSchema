@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self, TypeVar
 
-from ..utils import restrict_arguments
+from ..utils import get_parent_class, restrict_arguments
 
 ErrorSchemaType = TypeVar("ErrorSchemaType", bound="ErrorSchema")
 
@@ -55,8 +55,14 @@ class ErrorSchema(BaseModel):
         <readable_error_type>: <msg>
 
         where <readable_error_type> is the error type with underscores replaced
-        by spaces and capitalized, e.g. "validation_error" -> "Validation error",
-        and <msg> is the msg argument if provided, otherwise it will be the default_msg.
+        by spaces and capitalized, e.g. "validation_error" -> "Validation error".
+        If the "exc" argument is provided, it will be used as the error message.
+        Otherwise, the "msg" argument will be used as the error message.
+
+        Priority order:
+        1. exc
+        2. msg
+        3. default_msg
 
         Args:
             error_type (str): The type of the error.
@@ -66,13 +72,18 @@ class ErrorSchema(BaseModel):
         Returns:
             ErrorSchema: The error schema instance.
         """
-        readable_error_type = error_type.replace("_", " ").capitalize()
-        msg = kwargs.pop("msg", default_msg)
+
+        if "exc" in kwargs:
+            msg = kwargs.pop("exc").__str__()
+        else:
+            msg = kwargs.pop("msg", default_msg)
+
+        pretty_type = error_type.replace("_", " ").capitalize()
         msg = msg[0].lower() + msg[1:]
 
         return cls(
             type=error_type,
-            msg=f"{readable_error_type}: {msg}",
+            msg=f"{pretty_type}: {msg}",
             **kwargs,
         )
 
@@ -105,3 +116,53 @@ class ErrorSchema(BaseModel):
     def value_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a value error."""
         return cls._create_error("value_error", "Value error occurred.", **kwargs)
+
+    ## Subclasses ##
+
+    class File:
+
+        @classmethod
+        def not_found(cls, path: str, **kwargs):
+            """File not found error for a given path."""
+            return get_parent_class(cls).file_error(
+                msg=f"File '{path}' not found.", **kwargs,
+            )
+
+        @classmethod
+        def already_exists(cls, path: str, **kwargs):
+            """File already exists error for a given path."""
+            return get_parent_class(cls).file_error(
+                msg=f"File '{path}' already exists.", **kwargs,
+            )
+
+        @classmethod
+        def general(cls, desc: str, **kwargs):
+            """General file error.
+
+            Format for the message: "File operation failed while <desc>."
+            """
+            return get_parent_class(cls).file_error(
+                msg=f"File operation failed while {desc}.", **kwargs,
+            )
+
+    class DB:
+
+        @classmethod
+        def no_result(cls, desc: str, **kwargs):
+            """No results when querying a database.
+
+            Format for the message: "No results found while <desc>."
+            """
+            return get_parent_class(cls).database_error(
+                msg=f"No results found while {desc}.", **kwargs,
+            )
+
+        @classmethod
+        def general(cls, desc: str, **kwargs):
+            """General database error.
+
+            Format for the message: "Database operation failed while <desc>."
+            """
+            return get_parent_class(cls).database_error(
+                msg=f"Database failed while {desc}.", **kwargs,
+            )
