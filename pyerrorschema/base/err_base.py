@@ -68,6 +68,7 @@ class ErrorSchema(BaseModel):
         """
         readable_error_type = error_type.replace("_", " ").capitalize()
         msg = kwargs.pop("msg", default_msg)
+        msg = msg[0].lower() + msg[1:]
 
         return cls(
             type=error_type,

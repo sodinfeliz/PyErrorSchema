@@ -10,9 +10,10 @@ from ..utils import restrict_arguments
 
 
 class FastAPIErrorSchema(ErrorSchema):
+
+    ui_msg: Optional[str] = Field(default=None)
     loc: List[str] = Field(default_factory=list)
     input: Dict[str, Any] = Field(default_factory=dict)
-    ui_msg: Optional[str] = Field(default=None)
 
     def to_dict(self, target: MsgType = "backend") -> Dict[str, Any]:
         """Convert the error schema to a dictionary.
@@ -53,10 +54,10 @@ class FastAPIErrorSchema(ErrorSchema):
     def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
         """Base factory method to create an instance for an error."""
         readable_error_type = error_type.replace("_", " ").capitalize()
-        msg = kwargs.pop("msg", default_msg)
-
-        # if "ui_msg" in kwargs:
-        #     kwargs["ui_msg"] = f"{readable_error_type} occurred while {kwargs['ui_msg']}."
+        msg = kwargs.pop("msg", default_msg).capitalize().strip()
+        if "ui_msg" not in kwargs:
+            kwargs["ui_msg"] = msg
+        msg = msg[0].lower() + msg[1:]
 
         return cls(
             type=error_type,
