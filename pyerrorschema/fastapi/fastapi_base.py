@@ -65,19 +65,25 @@ class FastAPIErrorSchema(ErrorSchema):
 
         if "exc" in kwargs:
             msg = kwargs.pop("exc").__str__()
-            kwargs["ui_msg"] = kwargs.pop("msg", default_msg).capitalize().strip()
+            kwargs["ui_msg"] = (
+                kwargs.pop("msg", default_msg).capitalize().strip()
+                if "ui_msg" not in kwargs
+                else kwargs.pop("ui_msg")
+            )
         else:
             msg = kwargs.pop("msg", default_msg)
-            kwargs["ui_msg"] = msg.capitalize().strip()
+            kwargs["ui_msg"] = (
+                msg.capitalize().strip()
+                if "ui_msg" not in kwargs
+                else kwargs.pop("ui_msg")
+            )
 
         pretty_type = error_type.replace("_", " ").capitalize()
-        msg = msg[0].lower() + msg[1:]
+        if not msg.startswith(pretty_type):
+            msg = msg[0].lower() + msg[1:]
+            msg = f"{pretty_type}: {msg}"
 
-        return cls(
-            type=error_type,
-            msg=f"{pretty_type}: {msg}",
-            **kwargs,
-        )
+        return cls(type=error_type, msg=msg, **kwargs)
 
     @classmethod
     @restrict_arguments("type")
