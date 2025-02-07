@@ -64,26 +64,22 @@ class FastAPIErrorSchema(ErrorSchema):
         """
 
         if "exc" in kwargs:
-            msg = kwargs.pop("exc").__str__()
-            kwargs["ui_msg"] = (
-                kwargs.pop("msg", default_msg).capitalize().strip()
-                if "ui_msg" not in kwargs
-                else kwargs.pop("ui_msg")
-            )
+            msg = str(kwargs.pop("exc"))
+            ui_msg = kwargs.pop("msg", default_msg)
         else:
             msg = kwargs.pop("msg", default_msg)
-            kwargs["ui_msg"] = (
-                msg.capitalize().strip()
-                if "ui_msg" not in kwargs
-                else kwargs.pop("ui_msg")
-            )
+            ui_msg = msg
+
+        if "ui_msg" in kwargs:
+            ui_msg = kwargs.pop("ui_msg")
+        else:
+            ui_msg = ui_msg.capitalize().strip()
 
         pretty_type = error_type.replace("_", " ").capitalize()
         if not msg.startswith(pretty_type):
-            msg = msg[0].lower() + msg[1:]
-            msg = f"{pretty_type}: {msg}"
+            msg = f"{pretty_type}: {msg[0].lower() + msg[1:]}"
 
-        return cls(type=error_type, msg=msg, **kwargs)
+        return cls(type=error_type, msg=msg, ui_msg=ui_msg, **kwargs)
 
     @classmethod
     @restrict_arguments("type")
@@ -97,14 +93,15 @@ class FastAPIErrorSchema(ErrorSchema):
         """Factory method to create an instance for a docker error."""
         return cls._create_error("docker_error", "Docker error occurred.", **kwargs)
 
-    @classmethod
-    def customized_error(cls, **kwargs) -> Self:
-        """Factory method to create an instance for a customized error."""
-        error_type = kwargs.pop("type", "customized_error")
-        return cls._create_error(error_type, "Customized error occurred.", **kwargs)
-
     ## Subclasses ##
 
     class File(ErrorSchema.File): ...
 
     class DB(ErrorSchema.DB): ...
+
+    class Map(ErrorSchema.Map): ...
+
+    class Runtime(ErrorSchema.Runtime): ...
+
+    class Docker(ErrorSchema.Base):
+        name: str = "Docker"

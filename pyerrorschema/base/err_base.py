@@ -1,7 +1,7 @@
 import inspect
 import json
 import textwrap
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self, TypeVar
@@ -117,9 +117,54 @@ class ErrorSchema(BaseModel):
         """Factory method to create an instance for a value error."""
         return cls._create_error("value_error", "Value error occurred.", **kwargs)
 
+    @classmethod
+    def customized_error(cls, **kwargs) -> Self:
+        """Factory method to create an instance for a customized error."""
+        error_type = kwargs.pop("type", "customized_error")
+        return cls._create_error(error_type, "Customized error occurred.", **kwargs)
+
     ## Subclasses ##
 
-    class File:
+    class Base:
+        name: str = "Base"
+
+        @classmethod
+        def general(
+            cls,
+            action: Optional[str] = None,
+            reason: Optional[str] = None,
+            **kwargs,
+        ):
+            """General error for a given type.
+
+            Formats the message in one of two ways:
+            - "<type> error occurred while <action>."
+            - "<type> error occurred since <reason>."
+
+            Args:
+                type (str): The type of the error.
+                action (str): The action that caused the error.
+                reason (str): The reason for the error.
+                **kwargs: Additional keyword arguments to pass to the error schema.
+            """
+
+            if action and reason:
+                raise ValueError("Only one of 'action' or 'reason' should be provided.")
+
+            if action:
+                kwargs["msg"] = f"{cls.name} error occurred while {action}."
+            else:
+                kwargs["msg"] = f"{cls.name} error occurred since {reason}."
+
+            error_method = f"{cls.name.lower()}_error"
+            parent_cls = get_parent_class(cls)
+            if hasattr(parent_cls, error_method):
+                return getattr(parent_cls, error_method)(**kwargs)
+
+            return get_parent_class(cls).customized_error(type=error_method, **kwargs)
+
+    class File(Base):
+        name: str = "File"
 
         @classmethod
         def not_found(cls, path: str, **kwargs):
@@ -136,16 +181,46 @@ class ErrorSchema(BaseModel):
             )
 
         @classmethod
-        def general(cls, desc: str, **kwargs):
-            """General file error.
-
-            Format for the message: "File operation failed while <desc>."
-            """
+        def writing(cls, path: str, **kwargs):
+            """Writing error for a given path."""
             return get_parent_class(cls).file_error(
-                msg=f"File operation failed while {desc}.", **kwargs,
+                msg=f"Writing to file '{path}' failed.", **kwargs,
             )
 
-    class DB:
+        @classmethod
+        def reading(cls, path: str, **kwargs):
+            """Reading error for a given path."""
+            return get_parent_class(cls).file_error(
+                msg=f"Reading from file '{path}' failed.", **kwargs,
+            )
+
+        @classmethod
+        def deleting(cls, path: str, **kwargs):
+            """Deleting error for a given path."""
+            return get_parent_class(cls).file_error(
+                msg=f"Deleting file '{path}' failed.", **kwargs,
+            )
+
+        @classmethod
+        def copying(cls, path: str, **kwargs):
+            """Copying error for a given path."""
+            return get_parent_class(cls).file_error(
+                msg=f"Copying file '{path}' failed.", **kwargs,
+            )
+
+    class Map(Base):
+        name: str = "Dict"
+
+        @classmethod
+        def missing_keys(cls, keys: List[str], **kwargs):
+            """Missing keys error for a given keys."""
+            return get_parent_class(cls).customized_error(
+                type="dict_error",
+                msg=f"Keys '{', '.join(keys)}' not found in dictionary.", **kwargs,
+            )
+
+    class DB(Base):
+        name: str = "Database"
 
         @classmethod
         def no_result(cls, desc: str, **kwargs):
@@ -157,12 +232,17 @@ class ErrorSchema(BaseModel):
                 msg=f"No results found while {desc}.", **kwargs,
             )
 
-        @classmethod
-        def general(cls, desc: str, **kwargs):
-            """General database error.
+    class Value(Base):
+        name: str = "Value"
 
-            Format for the message: "Database operation failed while <desc>."
-            """
-            return get_parent_class(cls).database_error(
-                msg=f"Database failed while {desc}.", **kwargs,
-            )
+    class Parse(Base):
+        name: str = "Parse"
+
+    class Runtime(Base):
+        name: str = "Runtime"
+
+    class Assumbly(Base):
+        name: str = "Assumbly"
+
+    class Unknown(Base):
+        name: str = "Unknown"
