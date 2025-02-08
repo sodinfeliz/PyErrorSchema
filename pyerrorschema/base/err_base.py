@@ -1,6 +1,7 @@
 import inspect
 import json
 import textwrap
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -18,7 +19,7 @@ class ErrorSchema(BaseModel):
     msg: str = Field(default="")
 
     def __repr__(self) -> str:
-        attrs = [f"{k}={repr(v)}" for k, v in self.__dict__.items() if not k.startswith('_')]
+        attrs = [f"{k}={repr(v)}" for k, v in self.model_dump().items() if not k.startswith('_')]
         attrs_str = textwrap.indent(',\n'.join(attrs), '    ')
         return f"{self.__class__.__name__}(\n{attrs_str}\n)"
 
@@ -31,10 +32,6 @@ class ErrorSchema(BaseModel):
     def to_string(self) -> str:
         """Convert the error schema to a string."""
         return json.dumps(self.to_dict())
-
-    def schema_copy(self) -> Self:
-        """Create a deep copy of the error schema."""
-        return self.__class__(**self.model_dump())
 
     @classmethod
     def list_available_errors(cls) -> List[str]:
@@ -125,38 +122,82 @@ class ErrorSchema(BaseModel):
 
     ## Subclasses ##
 
-    class Base:
-        name: str = "Base"
+    class Base(ABC):
+        """Base class for all error schema subclasses.
+
+        This class provides a general error method for all error schema subclasses.
+        Each subclass can define its own `display_name` attribute to customize the
+        error message prefix. If not set, the class name will be used.
+
+        Example:
+            class File(Base):
+                # Uses class name in error messages
+                pass
+                
+            class DB(Base):
+                # Customizes error message prefix
+                display_name: str = "Database"
+                
+            # Usage examples:
+            File.general(action="reading config.json")
+            # Output: "File error occurred while reading config.json."
+            
+            DB.general(reason="connection timeout")
+            # Output: "Database error occurred since connection timeout."
+
+        The error method will automatically use the corresponding error factory
+        (e.g., file_error for File class) from the parent class. If no matching
+        error factory exists, it falls back to customized_error.
+        """
+        display_name: Optional[str] = None
 
         @classmethod
+        def _get_name(cls) -> str:
+            """Get the display name for error message formatting.
+            
+            Returns the custom name if it is defined, otherwise returns the class name.
+            """
+            return cls.display_name or cls.__name__
+
+        @classmethod
+        @abstractmethod
         def general(
             cls,
+            *,
             action: Optional[str] = None,
             reason: Optional[str] = None,
             **kwargs,
         ):
-            """General error for a given type.
+            """Create a general error instance for this error type.
 
-            Formats the message in one of two ways:
-            - "<type> error occurred while <action>."
-            - "<type> error occurred since <reason>."
+            The error message will be formatted in one of two ways:
+            - "<name> error occurred while <action>."
+            - "<name> error occurred since <reason>."
 
             Args:
-                type (str): The type of the error.
-                action (str): The action that caused the error.
-                reason (str): The reason for the error.
-                **kwargs: Additional keyword arguments to pass to the error schema.
+                action: Description of the action being performed when the error occurred.
+                    Example: "reading file", "connecting to database"
+                reason: Description of why the error occurred.
+                    Example: "invalid format", "connection timeout"
+                **kwargs: Additional keyword arguments to pass to the error factory method.
+
+            Raises:
+                ValueError: If both action and reason are provided.
+
+            Returns:
+                An error instance with the formatted message.
             """
 
             if action and reason:
                 raise ValueError("Only one of 'action' or 'reason' should be provided.")
 
+            name = cls._get_name()
             if action:
-                kwargs["msg"] = f"{cls.name} error occurred while {action}."
-            else:
-                kwargs["msg"] = f"{cls.name} error occurred since {reason}."
+                kwargs["msg"] = f"{name} error occurred while {action}."
+            elif reason:
+                kwargs["msg"] = f"{name} error occurred since {reason}."
 
-            error_method = f"{cls.name.lower()}_error"
+            error_method = f"{name.lower()}_error"
             parent_cls = get_parent_class(cls)
             if hasattr(parent_cls, error_method):
                 return getattr(parent_cls, error_method)(**kwargs)
@@ -164,7 +205,6 @@ class ErrorSchema(BaseModel):
             return get_parent_class(cls).customized_error(type=error_method, **kwargs)
 
     class File(Base):
-        name: str = "File"
 
         @classmethod
         def not_found(cls, path: str, **kwargs):
@@ -209,21 +249,22 @@ class ErrorSchema(BaseModel):
             )
 
     class Map(Base):
-        name: str = "Dict"
+        display_name: str = "Dict"
 
         @classmethod
         def missing_keys(cls, keys: List[str], **kwargs):
             """Missing keys error for a given keys."""
+            concat_keys = "', '".join(keys)
             return get_parent_class(cls).customized_error(
                 type="dict_error",
-                msg=f"Keys '{', '.join(keys)}' not found in dictionary.", **kwargs,
+                msg=f"Keys ('{concat_keys}') not found in dictionary.", **kwargs,
             )
 
     class DB(Base):
-        name: str = "Database"
+        display_name: str = "Database"
 
         @classmethod
-        def no_result(cls, desc: str, **kwargs):
+        def no_results(cls, desc: str, **kwargs):
             """No results when querying a database.
 
             Format for the message: "No results found while <desc>."
@@ -232,17 +273,12 @@ class ErrorSchema(BaseModel):
                 msg=f"No results found while {desc}.", **kwargs,
             )
 
-    class Value(Base):
-        name: str = "Value"
+    class Value(Base): ...
 
-    class Parse(Base):
-        name: str = "Parse"
+    class Parse(Base): ...
 
-    class Runtime(Base):
-        name: str = "Runtime"
+    class Runtime(Base): ...
 
-    class Assumbly(Base):
-        name: str = "Assumbly"
+    class Assumbly(Base): ...
 
-    class Unknown(Base):
-        name: str = "Unknown"
+    class Unknown(Base): ...
