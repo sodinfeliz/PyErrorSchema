@@ -133,15 +133,15 @@ class ErrorSchema(BaseModel):
             class File(Base):
                 # Uses class name in error messages
                 pass
-                
+
             class DB(Base):
                 # Customizes error message prefix
                 display_name: str = "Database"
-                
+
             # Usage examples:
             File.general(action="reading config.json")
             # Output: "File error occurred while reading config.json."
-            
+
             DB.general(reason="connection timeout")
             # Output: "Database error occurred since connection timeout."
 
@@ -154,7 +154,7 @@ class ErrorSchema(BaseModel):
         @classmethod
         def _get_name(cls) -> str:
             """Get the display name for error message formatting.
-            
+
             Returns the custom name if it is defined, otherwise returns the class name.
             """
             return cls.display_name or cls.__name__
