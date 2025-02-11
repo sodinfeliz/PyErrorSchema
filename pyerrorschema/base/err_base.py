@@ -31,7 +31,7 @@ class ErrorSchema(BaseModel):
 
     def to_string(self) -> str:
         """Convert the error schema to a string."""
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), indent=2)
 
     @classmethod
     def list_available_errors(cls) -> List[str]:
@@ -71,7 +71,7 @@ class ErrorSchema(BaseModel):
         """
 
         if "exc" in kwargs:
-            msg = kwargs.pop("exc").__str__()
+            msg = str(kwargs.pop("exc"))
         else:
             msg = kwargs.pop("msg", default_msg)
 

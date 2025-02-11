@@ -46,12 +46,17 @@ class FastAPIErrorSchema(ErrorSchema):
         Returns:
             err_str (str): The error schema as a string.
         """
-        return json.dumps(self.to_dict(target))
+        return json.dumps(self.to_dict(target), indent=2)
 
     ### Factory methods ###
 
     @classmethod
-    def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
+    def _create_error(
+        cls,
+        error_type: str,
+        default_msg: str,
+        **kwargs,
+    ) -> Self:
         """Base factory method to create an instance for an error.
 
         It will format the error message be like:

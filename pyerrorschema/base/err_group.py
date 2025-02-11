@@ -1,3 +1,4 @@
+import json
 import textwrap
 from copy import deepcopy
 from typing import Any, List, Union
@@ -50,7 +51,7 @@ class ErrGroup:
 
     def to_string(self) -> str:
         """Convert the error schemas to a string."""
-        return f"[{', '.join(err.to_string() for err in self._error_schemas)}]"
+        return json.dumps(self.to_dicts(), indent=2)
 
     def to_list(self) -> list:
         """Convert the error schemas to a list."""
