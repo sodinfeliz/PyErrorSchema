@@ -1,10 +1,11 @@
+import json
 import textwrap
 from copy import deepcopy
 from typing import Any, List, Union
 
 from typing_extensions import Self
 
-from .err_base import ErrorSchema
+from ..base.err_base import ErrorSchema
 
 
 class ErrGroup:
@@ -44,20 +45,13 @@ class ErrGroup:
 
     ## Methods for converting the error schemas ##
 
-    def to_dict(self) -> List[dict]:
-        """Convert the error schemas to a dictionary.
-
-        .. note:: This method is deprecated. Use `to_dicts` instead.
-        """
-        return [err.to_dict() for err in self._error_schemas]
-
     def to_dicts(self) -> List[dict]:
         """Convert the error schemas to a dictionary."""
         return [err.to_dict() for err in self._error_schemas]
 
     def to_string(self) -> str:
         """Convert the error schemas to a string."""
-        return f"[{', '.join(err.to_string() for err in self._error_schemas)}]"
+        return json.dumps(self.to_dicts(), indent=2)
 
     def to_list(self) -> list:
         """Convert the error schemas to a list."""

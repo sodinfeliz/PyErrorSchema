@@ -1,10 +1,9 @@
-from .err_base import ErrorSchema
-from .err_group import ErrGroup
+from .base import ErrGroup, ErrorSchema
 from .fastapi import FastAPIErrGroup, FastAPIErrorSchema
 
 __all__ = [
-    "FastAPIErrorSchema", 
+    "FastAPIErrorSchema",
     "FastAPIErrGroup",
-    "ErrorSchema", 
+    "ErrorSchema",
     "ErrGroup",
 ]

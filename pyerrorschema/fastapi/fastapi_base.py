@@ -4,22 +4,23 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 from typing_extensions import Self
 
-from ..err_base import ErrorSchema
+from ..base.err_base import ErrorSchema
 from ..types import MsgType
 from ..utils import restrict_arguments
 
 
 class FastAPIErrorSchema(ErrorSchema):
+
+    ui_msg: Optional[str] = Field(default=None)
     loc: List[str] = Field(default_factory=list)
     input: Dict[str, Any] = Field(default_factory=dict)
-    ui_msg: Optional[str] = Field(default=None)
 
     def to_dict(self, target: MsgType = "backend") -> Dict[str, Any]:
         """Convert the error schema to a dictionary.
 
-        If target is "frontend", only the fields `msg` and `input` are included, and
-        if `ui_msg` is not None, the field `msg` is overwritten by `ui_msg`. If target
-        is "backend", all fields are included, except for `ui_msg`.
+        - For target "backend": include all fields except `ui_msg`.
+        - For target "frontend": include only `msg` and `input`. If `ui_msg` is provided,
+          its value will override `msg`.
 
         Args:
             target (MsgType): The target of the error message. The default is "backend".
@@ -27,16 +28,14 @@ class FastAPIErrorSchema(ErrorSchema):
         Returns:
             error_dict (dict[str, Any]): The error schema as a dictionary.
         """
-        error_dict = self.model_dump()
 
         if target == "frontend":
-            error_dict.pop("loc")
-            error_dict.pop("type")
-            if error_dict["ui_msg"] is not None:
-                error_dict["msg"] = error_dict["ui_msg"]
+            return {
+                "msg": self.ui_msg or self.msg,
+                "input": self.input,
+            }
 
-        error_dict.pop("ui_msg")
-        return error_dict
+        return self.model_dump(exclude={"ui_msg"})
 
     def to_string(self, target: MsgType = "backend") -> str:
         """Convert the error schema to a string.
@@ -47,19 +46,45 @@ class FastAPIErrorSchema(ErrorSchema):
         Returns:
             err_str (str): The error schema as a string.
         """
-        return json.dumps(self.to_dict(target))
+        return json.dumps(self.to_dict(target), indent=2)
 
     ### Factory methods ###
 
-    def frontend_variant(self, msg: Optional[str] = None) -> Self:
-        """Convert the error schema to a frontend error schema.
+    @classmethod
+    def _create_error(
+        cls,
+        error_type: str,
+        default_msg: str,
+        **kwargs,
+    ) -> Self:
+        """Base factory method to create an instance for an error.
 
-        .. caution:: This method will be deprecated in the future.
+        It will format the error message be like:
+        <readable_error_type>: <msg>
+
+        where <readable_error_type> is the error type with underscores replaced
+        by spaces and capitalized, e.g. "validation_error" -> "Validation error".
+        If the "exc" argument is provided, it will be used as the error message.
+        Otherwise, the "msg" argument will be used as the error message.
         """
-        modified_schema = self.schema_copy()
-        if msg is not None:
-            modified_schema.msg = msg
-        return modified_schema
+
+        if "exc" in kwargs:
+            msg = str(kwargs.pop("exc"))
+            ui_msg = kwargs.pop("msg", default_msg)
+        else:
+            msg = kwargs.pop("msg", default_msg)
+            ui_msg = msg
+
+        if "ui_msg" in kwargs:
+            ui_msg = kwargs.pop("ui_msg")
+        else:
+            ui_msg = ui_msg.capitalize().strip()
+
+        pretty_type = error_type.replace("_", " ").capitalize()
+        if not msg.startswith(pretty_type):
+            msg = f"{pretty_type}: {msg[0].lower() + msg[1:]}"
+
+        return cls(type=error_type, msg=msg, ui_msg=ui_msg, **kwargs)
 
     @classmethod
     @restrict_arguments("type")
@@ -69,17 +94,28 @@ class FastAPIErrorSchema(ErrorSchema):
 
     @classmethod
     @restrict_arguments("type")
-    def value_error(cls, **kwargs) -> Self:
-        """Factory method to create an instance for a value error."""
-        return cls._create_error("value_error", "Value error occurred.", **kwargs)
-
-    @classmethod
-    @restrict_arguments("type")
     def docker_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a docker error."""
         return cls._create_error("docker_error", "Docker error occurred.", **kwargs)
 
-    @classmethod
-    def customized_error(cls, **kwargs) -> Self:
-        """Factory method to create an instance for a customized error."""
-        return cls._create_error("customized_error", "Customized error occurred.", **kwargs)
+    ## Subclasses - inherit from ErrorSchema ##
+
+    class File(ErrorSchema.File): ...
+
+    class Map(ErrorSchema.Map): ...
+
+    class DB(ErrorSchema.DB): ...
+
+    class Value(ErrorSchema.Value): ...
+
+    class Parse(ErrorSchema.Parse): ...
+
+    class Runtime(ErrorSchema.Runtime): ...
+
+    class Assumbly(ErrorSchema.Assumbly): ...
+
+    class Unknown(ErrorSchema.Unknown): ...
+
+    ## Subclasses - for FastAPI ##
+
+    class Docker(ErrorSchema.Base): ...

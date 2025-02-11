@@ -3,7 +3,7 @@ from typing import Iterator, List, Union
 
 from typing_extensions import Self
 
-from ..err_group import ErrGroup
+from ..base.err_group import ErrGroup
 from ..types import MsgType
 from .fastapi_base import FastAPIErrorSchema
 

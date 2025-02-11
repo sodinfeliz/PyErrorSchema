@@ -20,6 +20,3 @@ if __name__ == "__main__":
 
     # Single error schema to string
     print(err1.to_dict())
-
-    # Multiple error schemas to string
-    print(ErrorSchema.wrapping_string([err1, err2]))
