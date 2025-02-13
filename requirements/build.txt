@@ -1,1 +1,3 @@
+build
+twine
 pydantic>=2.6.4
