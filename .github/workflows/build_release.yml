@@ -21,12 +21,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.target_commitish }}
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.8' 
       - name: Install dependencies
         run: pip install -r requirements/build.txt
+      - name: Clean old build files
+        run: rm -rf dist/
       - name: Build distribution files
         run: python -m build
       - name: Upload to PyPI
