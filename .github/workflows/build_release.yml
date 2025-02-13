@@ -10,22 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
       - run: pip install -r requirements/dev.txt
       - run: pytest
 
-  build-release-test:
+  build-release:
     needs: pytest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.8
-      - run: pip install -r requirements/build.txt
-      - run: python -m build
-      - name: Upload to Test PyPI
+          python-version: '3.8' 
+      - name: Install dependencies
+        run: pip install -r requirements/build.txt
+      - name: Build distribution files
+        run: python -m build
+      - name: Upload to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+        run: python -m twine upload dist/*
