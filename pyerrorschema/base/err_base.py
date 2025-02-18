@@ -2,6 +2,7 @@ import inspect
 import json
 import textwrap
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -205,47 +206,91 @@ class ErrorSchema(BaseModel):
             return get_parent_class(cls).customized_error(type=error_method, **kwargs)
 
     class File(Base):
+        """Error schema for file operations.
+
+        Provides methods for common file operation errors with automatic path type detection
+        (file vs directory) for more precise error messages.
+
+        Examples:
+            >>> File.not_found(path="config.json")
+            "File 'config.json' not found."
+
+            >>> File.not_found(path="data/")
+            "Directory 'data/' not found."
+
+            >>> File.writing(path="output.txt")
+            "Writing to file 'output.txt' failed."
+        """
+
+        @classmethod
+        def _path_type(cls, path: str) -> str:
+            """Get the type of the path."""
+            return "file" if Path(path).suffix else "directory"
 
         @classmethod
         def not_found(cls, path: str, **kwargs):
             """File not found error for a given path."""
+            path_type = cls._path_type(path)
             return get_parent_class(cls).file_error(
-                msg=f"File '{path}' not found.", **kwargs,
+                msg=f"{path_type.capitalize()} '{path}' not found.", **kwargs,
             )
 
         @classmethod
         def already_exists(cls, path: str, **kwargs):
             """File already exists error for a given path."""
+            path_type = cls._path_type(path)
             return get_parent_class(cls).file_error(
-                msg=f"File '{path}' already exists.", **kwargs,
+                msg=f"{path_type.capitalize()} '{path}' already exists.", **kwargs,
+            )
+
+        @classmethod
+        def creating(cls, path: str, **kwargs):
+            """Creating error for a given path."""
+            path_type = cls._path_type(path)
+            return get_parent_class(cls).file_error(
+                msg=f"Creating {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
         def writing(cls, path: str, **kwargs):
             """Writing error for a given path."""
+            path_type = cls._path_type(path)
             return get_parent_class(cls).file_error(
-                msg=f"Writing to file '{path}' failed.", **kwargs,
+                msg=f"Writing to {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
         def reading(cls, path: str, **kwargs):
             """Reading error for a given path."""
+            path_type = cls._path_type(path)
             return get_parent_class(cls).file_error(
-                msg=f"Reading from file '{path}' failed.", **kwargs,
+                msg=f"Reading from {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
         def deleting(cls, path: str, **kwargs):
             """Deleting error for a given path."""
+            path_type = cls._path_type(path)
             return get_parent_class(cls).file_error(
-                msg=f"Deleting file '{path}' failed.", **kwargs,
+                msg=f"Deleting {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
         def copying(cls, path: str, **kwargs):
             """Copying error for a given path."""
+            path_type = cls._path_type(path)
             return get_parent_class(cls).file_error(
-                msg=f"Copying file '{path}' failed.", **kwargs,
+                msg=f"Copying {path_type} '{path}' failed.", **kwargs,
+            )
+
+        @classmethod
+        def saving(cls, path: str, **kwargs):
+            """Saving error for a given path.
+
+            only file is supported for this method.
+            """
+            return get_parent_class(cls).file_error(
+                msg=f"Saving file '{path}' failed.", **kwargs,
             )
 
     class Map(Base):
@@ -272,10 +317,31 @@ class ErrorSchema(BaseModel):
             return get_parent_class(cls).database_error(
                 msg=f"No results found while {desc}.", **kwargs,
             )
+        @classmethod
+        def foreign_key_violation(cls, **kwargs):
+            """Foreign key violation error."""
+            return get_parent_class(cls).database_error(
+                msg="Foreign key violation occurred.", **kwargs,
+            )
+
+    class Parse(Base):
+        display_name: str = "Parse"
+
+        @classmethod
+        def invalid_format(cls, expected_format: str, actual_format: str, **kwargs):
+            """Invalid format error."""
+            return get_parent_class(cls).parse_error(
+                msg=f"Expected format '{expected_format}', but got '{actual_format}'.", **kwargs,
+            )
+
+        @classmethod
+        def inputs_length_inconsistent(cls, **kwargs):
+            """Inputs length inconsistent error."""
+            return get_parent_class(cls).parse_error(
+                msg="The length of inputs is inconsistent.", **kwargs,
+            )
 
     class Value(Base): ...
-
-    class Parse(Base): ...
 
     class Runtime(Base): ...
 
