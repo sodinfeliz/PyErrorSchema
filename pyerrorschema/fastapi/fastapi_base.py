@@ -57,34 +57,50 @@ class FastAPIErrorSchema(ErrorSchema):
         default_msg: str,
         **kwargs,
     ) -> Self:
-        """Base factory method to create an instance for an error.
+        """Base factory method to create an error schema instance.
 
-        It will format the error message be like:
+        Error message will be formatted as:
         <readable_error_type>: <msg>
 
         where <readable_error_type> is the error type with underscores replaced
         by spaces and capitalized, e.g. "validation_error" -> "Validation error".
-        If the "exc" argument is provided, it will be used as the error message.
-        Otherwise, the "msg" argument will be used as the error message.
+
+        The priority order for each argument is as follows:
+
+        1. msg (backend message): msg > ui_msg > default_msg
+        2. ui_msg (frontend message): ui_msg > msg > default_msg
+
+        The exception message will be appended to the backend message if provided.
+
+        Args:
+            error_type (str): The type of the error.
+            default_msg (str): The default message of the error.
+            **kwargs: Additional keyword arguments including:
+                - exc: The exception that occurred.
+                - ui_msg: The message to display to the user.
+                - msg: The message to display to the backend.
+
+        Returns:
+            error_instance (Self): The error schema instance.
         """
+        # Extract arguments
+        exc = kwargs.pop("exc", None)
+        ui_msg = kwargs.pop("ui_msg", None)
+        msg = kwargs.pop("msg", default_msg)
 
-        if "exc" in kwargs:
-            msg = str(kwargs.pop("exc"))
-            ui_msg = kwargs.pop("msg", default_msg)
-        else:
-            msg = kwargs.pop("msg", default_msg)
-            ui_msg = msg
+        # Format backend message
+        backend_msg = msg
+        if exc:
+            backend_msg += f" (Error: {str(exc)})"
 
-        if "ui_msg" in kwargs:
-            ui_msg = kwargs.pop("ui_msg")
-        else:
-            ui_msg = ui_msg.capitalize().strip()
+        # Format frontend message
+        frontend_msg = (ui_msg or msg).capitalize().strip()
 
         pretty_type = error_type.replace("_", " ").capitalize()
-        if not msg.startswith(pretty_type):
-            msg = f"{pretty_type}: {msg[0].lower() + msg[1:]}"
+        if not backend_msg.startswith(pretty_type):
+            backend_msg = f"{pretty_type}: {backend_msg[0:1].lower()}{backend_msg[1:]}"
 
-        return cls(type=error_type, msg=msg, ui_msg=ui_msg, **kwargs)
+        return cls(type=error_type, msg=backend_msg, ui_msg=frontend_msg, **kwargs)
 
     @classmethod
     @restrict_arguments("type")
