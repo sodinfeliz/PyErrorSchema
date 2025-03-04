@@ -10,7 +10,7 @@ def restrict_arguments(*forbidden_args):
 
     Usage:
         ```
-        @disallow_arguments("arg1", "arg2")
+        @restrict_arguments("arg1", "arg2")
         def some_method(self, **kwargs):
             ...
         ```

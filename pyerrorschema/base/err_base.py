@@ -3,7 +3,7 @@ import json
 import textwrap
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self, TypeVar
@@ -11,6 +11,25 @@ from typing_extensions import Self, TypeVar
 from ..utils import get_parent_class, restrict_arguments
 
 ErrorSchemaType = TypeVar("ErrorSchemaType", bound="ErrorSchema")
+
+_EXCEPTION_MAP = {
+    # File-related
+    FileNotFoundError: "file_error",
+    IsADirectoryError: "file_error",
+    NotADirectoryError: "file_error",
+    PermissionError: "file_error",
+    FileExistsError: "file_error",
+
+    # Value-related
+    ValueError: "value_error",
+    TypeError: "value_error",
+    AttributeError: "value_error",
+
+    # Runtime-related
+    RuntimeError: "runtime_error",
+    NotImplementedError: "runtime_error",
+    ImportError: "runtime_error",
+}
 
 
 class ErrorSchema(BaseModel):
@@ -42,6 +61,11 @@ class ErrorSchema(BaseModel):
             for name, _ in inspect.getmembers(cls, predicate=inspect.ismethod)
             if name.endswith("_error") and not name.startswith("_")
         ]
+
+    @classmethod
+    def get_mapping(cls) -> Dict[Type[Exception], str]:
+        """Get the mapping of exception types to error types."""
+        return _EXCEPTION_MAP
 
     ### Factory methods ###
 
@@ -119,6 +143,37 @@ class ErrorSchema(BaseModel):
         """Factory method to create an instance for a customized error."""
         error_type = kwargs.pop("type", "customized_error")
         return cls._create_error(error_type, "Customized error occurred.", **kwargs)
+
+
+    @classmethod
+    def from_exception(cls, exc: Exception, **kwargs) -> Self:
+        """Create an error schema instance from an exception.
+
+        Automatically maps Python exceptions to appropriate error schemas based on their type.
+        Captures both the primary exception and any chained exceptions (from either
+        explicit 'raise ... from' or implicit exception chaining).
+
+        Note that this method currently only supports the built-in exceptions.
+        Custom exceptions are not supported yet.
+        """
+        # Get the cause (explicit) or context (implicit) of the exception
+        cause = exc.__cause__ or exc.__context__
+        factory_type = None
+
+        # Find matching error type for the main exception
+        for exc_type, error_type in cls.get_mapping().items():
+            if isinstance(exc, exc_type):
+                factory_type = error_type
+                break
+        else:
+            factory_type = "runtime_error"
+
+        # Format message
+        kwargs['msg'] = str(exc)
+        if cause:
+            kwargs['exc'] = cause
+
+        return cls._create_error(factory_type, "Error occurred.", **kwargs)
 
     ## Subclasses ##
 
