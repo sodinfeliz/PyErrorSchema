@@ -6,7 +6,7 @@ from typing_extensions import Self
 
 from ..base.err_base import ErrorSchema
 from ..types import MsgType
-from ..utils import restrict_arguments
+from ..utils import get_parent_class, restrict_arguments
 
 
 class FastAPIErrorSchema(ErrorSchema):
@@ -57,34 +57,50 @@ class FastAPIErrorSchema(ErrorSchema):
         default_msg: str,
         **kwargs,
     ) -> Self:
-        """Base factory method to create an instance for an error.
+        """Base factory method to create an error schema instance.
 
-        It will format the error message be like:
+        Error message will be formatted as:
         <readable_error_type>: <msg>
 
         where <readable_error_type> is the error type with underscores replaced
         by spaces and capitalized, e.g. "validation_error" -> "Validation error".
-        If the "exc" argument is provided, it will be used as the error message.
-        Otherwise, the "msg" argument will be used as the error message.
+
+        The priority order for each argument is as follows:
+
+        1. msg (backend message): msg > ui_msg > default_msg
+        2. ui_msg (frontend message): ui_msg > msg > default_msg
+
+        The exception message will be appended to the backend message if provided.
+
+        Args:
+            error_type (str): The type of the error.
+            default_msg (str): The default message of the error.
+            **kwargs: Additional keyword arguments including:
+                - exc: The exception that occurred.
+                - ui_msg: The message to display to the user.
+                - msg: The message to display to the backend.
+
+        Returns:
+            error_instance (Self): The error schema instance.
         """
+        # Extract arguments
+        exc = kwargs.pop("exc", None)
+        ui_msg = kwargs.pop("ui_msg", None)
+        msg = kwargs.pop("msg", default_msg)
 
-        if "exc" in kwargs:
-            msg = str(kwargs.pop("exc"))
-            ui_msg = kwargs.pop("msg", default_msg)
-        else:
-            msg = kwargs.pop("msg", default_msg)
-            ui_msg = msg
+        # Format backend message
+        backend_msg = msg
+        if exc:
+            backend_msg += f" ({str(exc)})"
 
-        if "ui_msg" in kwargs:
-            ui_msg = kwargs.pop("ui_msg")
-        else:
-            ui_msg = ui_msg.capitalize().strip()
+        # Format frontend message
+        frontend_msg = (ui_msg or msg).capitalize().strip()
 
-        pretty_type = error_type.replace("_", " ").capitalize()
-        if not msg.startswith(pretty_type):
-            msg = f"{pretty_type}: {msg[0].lower() + msg[1:]}"
+        pretty_type = f"{error_type.replace('_', ' ').capitalize()}:"
+        if not backend_msg.startswith(pretty_type):
+            backend_msg = f"{pretty_type} {backend_msg[0:1].lower()}{backend_msg[1:]}"
 
-        return cls(type=error_type, msg=msg, ui_msg=ui_msg, **kwargs)
+        return cls(type=error_type, msg=backend_msg, ui_msg=frontend_msg, **kwargs)
 
     @classmethod
     @restrict_arguments("type")
@@ -118,4 +134,76 @@ class FastAPIErrorSchema(ErrorSchema):
 
     ## Subclasses - for FastAPI ##
 
-    class Docker(ErrorSchema.Base): ...
+    class Validation(ErrorSchema.Base): ...
+
+    class Docker(ErrorSchema.Base):
+
+        @classmethod
+        def waiting(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when waiting for a container to finish.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when waiting for {container_msg} to finish.",
+                **kwargs,
+            )
+
+        @classmethod
+        def running(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when running a container.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when running {container_msg}.",
+                **kwargs,
+            )
+
+        @classmethod
+        def starting(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when starting a container.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when starting {container_msg}.",
+                **kwargs,
+            )
+
+        @classmethod
+        def stopping(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when stopping a container.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when stopping {container_msg}.",
+                **kwargs,
+            )
+
+        @classmethod
+        def removing(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when removing a container.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when removing {container_msg}.",
+                **kwargs,
+            )
