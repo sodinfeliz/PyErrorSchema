@@ -91,7 +91,7 @@ class FastAPIErrorSchema(ErrorSchema):
         # Format backend message
         backend_msg = msg
         if exc:
-            backend_msg += f" (Error: {str(exc)})"
+            backend_msg += f" ({str(exc)})"
 
         # Format frontend message
         frontend_msg = (ui_msg or msg).capitalize().strip()
