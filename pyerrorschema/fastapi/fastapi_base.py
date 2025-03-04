@@ -7,9 +7,18 @@ from typing_extensions import Self
 from ..base.err_base import ErrorSchema
 from ..types import MsgType
 from ..utils import get_parent_class, restrict_arguments
+from .location import get_caller_location
 
 
 class FastAPIErrorSchema(ErrorSchema):
+    """Error schema for FastAPI.
+
+    For location attribute setting:
+
+    - To turn off the automatic location setting, set `auto_loc` to `False` when
+      calling the factory method.
+    - To manually set the location, use the `loc` field.
+    """
 
     ui_msg: Optional[str] = Field(default=None)
     loc: List[str] = Field(default_factory=list)
@@ -55,6 +64,7 @@ class FastAPIErrorSchema(ErrorSchema):
         cls,
         error_type: str,
         default_msg: str,
+        auto_loc: bool = True,
         **kwargs,
     ) -> Self:
         """Base factory method to create an error schema instance.
@@ -83,18 +93,19 @@ class FastAPIErrorSchema(ErrorSchema):
         Returns:
             error_instance (Self): The error schema instance.
         """
-        # Extract arguments
         exc = kwargs.pop("exc", None)
         ui_msg = kwargs.pop("ui_msg", None)
         msg = kwargs.pop("msg", default_msg)
 
-        # Format backend message
+        # Format backend/frontend message
         backend_msg = msg
         if exc:
             backend_msg += f" ({str(exc)})"
-
-        # Format frontend message
         frontend_msg = (ui_msg or msg).capitalize().strip()
+
+        # Automatically set the location
+        if auto_loc and "loc" not in kwargs and (loc := get_caller_location()):
+            kwargs["loc"] = [loc]
 
         pretty_type = f"{error_type.replace('_', ' ').capitalize()}:"
         if not backend_msg.startswith(pretty_type):
