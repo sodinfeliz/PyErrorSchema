@@ -71,10 +71,9 @@ class ErrorSchema(BaseModel):
             ErrorSchema: The error schema instance.
         """
 
+        msg = kwargs.pop("msg", default_msg)
         if "exc" in kwargs:
-            msg = str(kwargs.pop("exc"))
-        else:
-            msg = kwargs.pop("msg", default_msg)
+            msg += f" ({str(kwargs['exc'])})"
 
         pretty_type = error_type.replace("_", " ").capitalize()
         msg = msg[0].lower() + msg[1:]
