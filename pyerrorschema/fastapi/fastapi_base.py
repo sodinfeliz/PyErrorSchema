@@ -6,7 +6,7 @@ from typing_extensions import Self
 
 from ..base.err_base import ErrorSchema
 from ..types import MsgType
-from ..utils import restrict_arguments
+from ..utils import get_parent_class, restrict_arguments
 
 
 class FastAPIErrorSchema(ErrorSchema):
@@ -96,9 +96,9 @@ class FastAPIErrorSchema(ErrorSchema):
         # Format frontend message
         frontend_msg = (ui_msg or msg).capitalize().strip()
 
-        pretty_type = error_type.replace("_", " ").capitalize()
+        pretty_type = f"{error_type.replace('_', ' ').capitalize()}:"
         if not backend_msg.startswith(pretty_type):
-            backend_msg = f"{pretty_type}: {backend_msg[0:1].lower()}{backend_msg[1:]}"
+            backend_msg = f"{pretty_type} {backend_msg[0:1].lower()}{backend_msg[1:]}"
 
         return cls(type=error_type, msg=backend_msg, ui_msg=frontend_msg, **kwargs)
 
@@ -134,4 +134,76 @@ class FastAPIErrorSchema(ErrorSchema):
 
     ## Subclasses - for FastAPI ##
 
-    class Docker(ErrorSchema.Base): ...
+    class Validation(ErrorSchema.Base): ...
+
+    class Docker(ErrorSchema.Base):
+
+        @classmethod
+        def waiting(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when waiting for a container to finish.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when waiting for {container_msg} to finish.",
+                **kwargs,
+            )
+
+        @classmethod
+        def running(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when running a container.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when running {container_msg}.",
+                **kwargs,
+            )
+
+        @classmethod
+        def starting(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when starting a container.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when starting {container_msg}.",
+                **kwargs,
+            )
+
+        @classmethod
+        def stopping(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when stopping a container.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when stopping {container_msg}.",
+                **kwargs,
+            )
+
+        @classmethod
+        def removing(cls, container: Optional[str] = None, **kwargs) -> Self:
+            """Docker error when removing a container.
+
+            Args:
+                container (str): The name of the container.
+                **kwargs: Additional keyword arguments.
+            """
+            container_msg = f"container '{container}'" if container else "a container"
+            return get_parent_class(cls).docker_error(
+                msg=f"Failed when removing {container_msg}.",
+                **kwargs,
+            )
