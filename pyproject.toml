@@ -18,7 +18,7 @@ classifiers = [
     "Framework :: Pydantic :: 2",
 ]
 dependencies = [
-    "pydantic>=2.6.4"
+    "pydantic>=2.6.4,<3.0.0"
 ]
 
 [project.urls]
