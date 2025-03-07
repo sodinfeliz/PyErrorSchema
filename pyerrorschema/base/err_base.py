@@ -116,6 +116,12 @@ class ErrorSchema(BaseModel):
 
     @classmethod
     @restrict_arguments("type")
+    def timeout_error(cls, **kwargs) -> Self:
+        """Factory method to create an instance for a timeout error."""
+        return cls._create_error("timeout_error", "Timeout error occurred.", **kwargs)
+
+    @classmethod
+    @restrict_arguments("type")
     def parse_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a parse error."""
         return cls._create_error("parse_error", "Parse error occurred.", **kwargs)

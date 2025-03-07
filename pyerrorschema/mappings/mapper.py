@@ -23,9 +23,7 @@ class ExceptionMapper:
         schema_name: Optional[str] = None,
     ) -> Dict[str, Dict[str, str]]:
         """Get the mapping between exception types and error types."""
-        if schema_name is None:
-            schema_name = cls._default_schema_name
-        return SCHEMA_TO_MAPPINGS.get(schema_name, {})
+        return SCHEMA_TO_MAPPINGS.get(schema_name or cls._default_schema_name, {})
 
     @classmethod
     def get_error_type(
