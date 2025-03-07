@@ -3,7 +3,7 @@ import json
 import textwrap
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self, TypeVar
@@ -146,7 +146,20 @@ class ErrorSchema(BaseModel):
         Automatically maps exceptions to appropriate error schemas based on their type.
         Captures both the primary exception and any chained exceptions (from either
         explicit 'raise ... from' or implicit exception chaining).
+
+        If the exception is already an error schema, it will be returned directly.
+
+        Args:
+            exc (Exception): The exception to create an error schema from.
+            **kwargs: Additional keyword arguments to pass to the error schema.
         """
+        # If the exception is already an error schema, return it
+        if isinstance(exc.args[0], cls):
+            return exc.args[0]
+
+        # At this point, exc is an Exception
+        exc = cast(Exception, exc)
+
         # Get the cause (explicit) or context (implicit) of the exception
         cause = exc.__cause__ or exc.__context__
         error_type = ExceptionMapper.get_error_type_from_exception(cls.__name__, exc)

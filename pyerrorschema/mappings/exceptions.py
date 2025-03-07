@@ -22,6 +22,7 @@ EXCEPTION_MAPPINGS_BASE = {
         "RuntimeError": "runtime_error",
         "NotImplementedError": "runtime_error",
         "ImportError": "runtime_error",
+        "OSError": "runtime_error",
     },
 
     "json.decoder": {
