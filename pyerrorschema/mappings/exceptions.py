@@ -46,11 +46,11 @@ EXCEPTION_MAPPINGS_BASE = {
 
     # Exceptions in psycopg2.errors
     "psycopg2.errors": {
-        "UndefinedTable": "database_error",
-        "ForeignKeyViolation": "database_error",
-        "UndefinedColumn": "database_error",
-        "UniqueViolation": "database_error",
-        "NotNullViolation": "database_error",
+        "UndefinedTable": "value_error",
+        "ForeignKeyViolation": "value_error",
+        "UndefinedColumn": "value_error",
+        "UniqueViolation": "value_error",
+        "NotNullViolation": "value_error",
     },
 
     # Exceptions in psycopg2.pool
