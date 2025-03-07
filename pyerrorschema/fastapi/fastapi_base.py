@@ -24,6 +24,10 @@ class FastAPIErrorSchema(ErrorSchema):
     loc: List[str] = Field(default_factory=list)
     input: Dict[str, Any] = Field(default_factory=dict)
 
+    #######################
+    ### Utility methods ###
+    #######################
+
     def to_dict(self, target: MsgType = "backend") -> Dict[str, Any]:
         """Convert the error schema to a dictionary.
 
@@ -57,7 +61,9 @@ class FastAPIErrorSchema(ErrorSchema):
         """
         return json.dumps(self.to_dict(target), indent=2)
 
+    #######################
     ### Factory methods ###
+    #######################
 
     @classmethod
     def _create_error(

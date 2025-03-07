@@ -3,33 +3,15 @@ import json
 import textwrap
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self, TypeVar
 
+from ..mappings import ExceptionMapper
 from ..utils import get_parent_class, restrict_arguments
 
 ErrorSchemaType = TypeVar("ErrorSchemaType", bound="ErrorSchema")
-
-_EXCEPTION_MAP = {
-    # File-related
-    FileNotFoundError: "file_error",
-    IsADirectoryError: "file_error",
-    NotADirectoryError: "file_error",
-    PermissionError: "file_error",
-    FileExistsError: "file_error",
-
-    # Value-related
-    ValueError: "value_error",
-    TypeError: "value_error",
-    AttributeError: "value_error",
-
-    # Runtime-related
-    RuntimeError: "runtime_error",
-    NotImplementedError: "runtime_error",
-    ImportError: "runtime_error",
-}
 
 
 class ErrorSchema(BaseModel):
@@ -46,13 +28,6 @@ class ErrorSchema(BaseModel):
     def __str__(self) -> str:
         return self.__repr__()
 
-    def to_dict(self) -> Dict[str, Any]:
-        return self.model_dump()
-
-    def to_string(self) -> str:
-        """Convert the error schema to a string."""
-        return json.dumps(self.to_dict(), indent=2)
-
     @classmethod
     def list_available_errors(cls) -> List[str]:
         """List all available error types."""
@@ -63,11 +38,24 @@ class ErrorSchema(BaseModel):
         ]
 
     @classmethod
-    def get_mapping(cls) -> Dict[Type[Exception], str]:
-        """Get the mapping of exception types to error types."""
-        return _EXCEPTION_MAP
+    def get_mapping(cls) -> dict:
+        """Get the mapping between exception types and error types."""
+        return ExceptionMapper.get_mapping(cls.__name__)
 
+    #######################
+    ### Utility methods ###
+    #######################
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.model_dump()
+
+    def to_string(self) -> str:
+        """Convert the error schema to a string."""
+        return json.dumps(self.to_dict(), indent=2)
+
+    #######################
     ### Factory methods ###
+    #######################
 
     @classmethod
     def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
@@ -149,31 +137,20 @@ class ErrorSchema(BaseModel):
     def from_exception(cls, exc: Exception, **kwargs) -> Self:
         """Create an error schema instance from an exception.
 
-        Automatically maps Python exceptions to appropriate error schemas based on their type.
+        Automatically maps exceptions to appropriate error schemas based on their type.
         Captures both the primary exception and any chained exceptions (from either
         explicit 'raise ... from' or implicit exception chaining).
-
-        Note that this method currently only supports the built-in exceptions.
-        Custom exceptions are not supported yet.
         """
         # Get the cause (explicit) or context (implicit) of the exception
         cause = exc.__cause__ or exc.__context__
-        factory_type = None
-
-        # Find matching error type for the main exception
-        for exc_type, error_type in cls.get_mapping().items():
-            if isinstance(exc, exc_type):
-                factory_type = error_type
-                break
-        else:
-            factory_type = "runtime_error"
+        error_type = ExceptionMapper.get_error_type_from_exception(cls.__name__, exc)
 
         # Format message
         kwargs['msg'] = str(exc)
         if cause:
             kwargs['exc'] = cause
 
-        return cls._create_error(factory_type, "Error occurred.", **kwargs)
+        return cls._create_error(error_type, "Error occurred.", **kwargs)
 
     ## Subclasses ##
 
