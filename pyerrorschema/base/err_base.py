@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self, TypeVar
 
+from ..mappings import ExceptionMapper
 from ..utils import get_parent_class, restrict_arguments
 
 ErrorSchemaType = TypeVar("ErrorSchemaType", bound="ErrorSchema")
@@ -27,13 +28,6 @@ class ErrorSchema(BaseModel):
     def __str__(self) -> str:
         return self.__repr__()
 
-    def to_dict(self) -> Dict[str, Any]:
-        return self.model_dump()
-
-    def to_string(self) -> str:
-        """Convert the error schema to a string."""
-        return json.dumps(self.to_dict(), indent=2)
-
     @classmethod
     def list_available_errors(cls) -> List[str]:
         """List all available error types."""
@@ -43,7 +37,25 @@ class ErrorSchema(BaseModel):
             if name.endswith("_error") and not name.startswith("_")
         ]
 
+    @classmethod
+    def get_mapping(cls) -> dict:
+        """Get the mapping between exception types and error types."""
+        return ExceptionMapper.get_mapping(cls.__name__)
+
+    #######################
+    ### Utility methods ###
+    #######################
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.model_dump()
+
+    def to_string(self) -> str:
+        """Convert the error schema to a string."""
+        return json.dumps(self.to_dict(), indent=2)
+
+    #######################
     ### Factory methods ###
+    #######################
 
     @classmethod
     def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
@@ -104,6 +116,12 @@ class ErrorSchema(BaseModel):
 
     @classmethod
     @restrict_arguments("type")
+    def timeout_error(cls, **kwargs) -> Self:
+        """Factory method to create an instance for a timeout error."""
+        return cls._create_error("timeout_error", "Timeout error occurred.", **kwargs)
+
+    @classmethod
+    @restrict_arguments("type")
     def parse_error(cls, **kwargs) -> Self:
         """Factory method to create an instance for a parse error."""
         return cls._create_error("parse_error", "Parse error occurred.", **kwargs)
@@ -119,6 +137,26 @@ class ErrorSchema(BaseModel):
         """Factory method to create an instance for a customized error."""
         error_type = kwargs.pop("type", "customized_error")
         return cls._create_error(error_type, "Customized error occurred.", **kwargs)
+
+
+    @classmethod
+    def from_exception(cls, exc: Exception, **kwargs) -> Self:
+        """Create an error schema instance from an exception.
+
+        Automatically maps exceptions to appropriate error schemas based on their type.
+        Captures both the primary exception and any chained exceptions (from either
+        explicit 'raise ... from' or implicit exception chaining).
+        """
+        # Get the cause (explicit) or context (implicit) of the exception
+        cause = exc.__cause__ or exc.__context__
+        error_type = ExceptionMapper.get_error_type_from_exception(cls.__name__, exc)
+
+        # Format message
+        kwargs['msg'] = str(exc)
+        if cause:
+            kwargs['exc'] = cause
+
+        return cls._create_error(error_type, "Error occurred.", **kwargs)
 
     ## Subclasses ##
 
