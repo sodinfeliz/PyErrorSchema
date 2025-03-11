@@ -1,4 +1,3 @@
-import threading
 from functools import lru_cache
 from typing import ClassVar, Dict, Final, Optional
 
@@ -26,8 +25,8 @@ class ExceptionMapper:
 
     _default_schema_name: Final[str] = "ErrorSchema"
     _default_error_type: Final[str] = "runtime_error"
-    _valid_schemas: ClassVar[set[str]] = set(SCHEMA_TO_MAPPINGS.keys())
-    _lock: ClassVar[threading.Lock] = threading.Lock()
+    _valid_schemas: ClassVar[frozenset[str]] = frozenset(SCHEMA_TO_MAPPINGS.keys())
+
     @classmethod
     def validate_schema(cls, schema_name: str):
         """Validate that the schema name is known."""
@@ -36,29 +35,6 @@ class ExceptionMapper:
                 f"Unknown schema: {schema_name}. "
                 f"Valid schemas are: {sorted(cls._valid_schemas)}"
             )
-
-    @classmethod
-    def register_schema(
-        cls,
-        schema_name: str,
-        mapping: Dict[str, Dict[str, str]],
-    ) -> None:
-        """Register a new schema with its mappings.
-
-        Args:
-            schema_name: Name of the schema to register
-            mappings: Dictionary of module -> class -> error_type mappings
-        """
-        if schema_name in cls._valid_schemas:
-            raise ValueError(
-                f"Schema already registered: {sorted(cls._valid_schemas)}. "
-                f"Please use a different name."
-            )
-
-        with cls._lock:
-            cls._valid_schemas.add(schema_name)
-            SCHEMA_TO_MAPPINGS[schema_name] = mapping
-            cls.clear_caches()
 
     @classmethod
     @lru_cache(maxsize=None)
