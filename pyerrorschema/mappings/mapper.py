@@ -24,7 +24,7 @@ class ExceptionMapper:
     """
 
     _default_schema_name: Final[str] = "ErrorSchema"
-    _default_error_type: Final[str] = "runtime_error"
+    _default_error_type: Final[str] = "unknown_error"
     _valid_schemas: ClassVar[frozenset[str]] = frozenset(SCHEMA_TO_MAPPINGS.keys())
 
     @classmethod
@@ -61,7 +61,7 @@ class ExceptionMapper:
         schema_name: str,
         exc_module: str,
         exc_class: str,
-    ) -> str:
+    ) -> Optional[str]:
         """Get the error type for a given exception type.
 
         Args:
@@ -76,7 +76,7 @@ class ExceptionMapper:
         error_type = (
             mapping
             .get(exc_module, {})
-            .get(exc_class, cls._default_error_type)
+            .get(exc_class, None)
         )
         return error_type
 
@@ -88,18 +88,50 @@ class ExceptionMapper:
     ) -> str:
         """Get the error type for a given exception.
 
+        This method traverses the exception's inheritance hierarchy (MRO) to find the first
+        matching error type mapping. It starts with the most specific exception class and
+        moves up the hierarchy until either:
+
+        - A matching error type is found
+        - The base Exception class is reached
+        - No mapping is found (returns default error type)
+
         Args:
             schema_name: Name of the schema to use
             exc: Exception instance to map
 
         Returns:
             Mapped error type for the exception
+
+        Example:
+            Given an inheritance chain: HTTPError -> RequestException -> Exception
+            The method will attempt to find mappings in this order:
+            1. HTTPError
+            2. RequestException
+            3. Returns default_error_type if no mapping is found
         """
-        return cls.get_error_type(
-            schema_name,
-            exc.__class__.__module__,
-            exc.__class__.__name__,
-        )
+        if not isinstance(exc, Exception):
+            raise TypeError(f"Expected Exception, got {type(exc)}")
+
+        # Get the MRO of the exception
+        exc_mro: tuple[type, ...] = exc.__class__.__mro__
+        error_type = cls._default_error_type
+
+        # Walk up the inheritance hierarchy
+        for exc_class in exc_mro:
+            if exc_class.__name__ == "Exception":
+                break
+
+            mapped_type = cls.get_error_type(
+                schema_name,
+                exc_class.__module__,
+                exc_class.__name__,
+            )
+            if mapped_type is not None:
+                error_type = mapped_type
+                break
+
+        return error_type
 
     @classmethod
     def clear_caches(cls):
