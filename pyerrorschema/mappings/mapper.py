@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import ClassVar, Dict, Final, Optional
 
 from .exceptions import (
+    DEFAULT_ERROR_TYPE,
     EXCEPTION_MAPPINGS_BASE,
     EXCEPTION_MAPPINGS_FASTAPI,
 )
@@ -24,7 +25,7 @@ class ExceptionMapper:
     """
 
     _default_schema_name: Final[str] = "ErrorSchema"
-    _default_error_type: Final[str] = "unknown_error"
+    _default_error_type: Final[str] = DEFAULT_ERROR_TYPE
     _valid_schemas: ClassVar[frozenset[str]] = frozenset(SCHEMA_TO_MAPPINGS.keys())
 
     @classmethod
@@ -86,29 +87,33 @@ class ExceptionMapper:
         schema_name: str,
         exc: Exception,
     ) -> str:
-        """Get the error type for a given exception.
+        """Map an exception instance to its corresponding error type.
 
         This method traverses the exception's inheritance hierarchy (MRO) to find the first
         matching error type mapping. It starts with the most specific exception class and
         moves up the hierarchy until either:
 
         - A matching error type is found
-        - The base Exception class is reached
+        - The base 'object' class is reached
         - No mapping is found (returns default error type)
 
         Args:
-            schema_name: Name of the schema to use
-            exc: Exception instance to map
+            schema_name: Name of the error schema to use for mapping
+            exc: Exception instance to map to an error type
 
         Returns:
-            Mapped error type for the exception
+            str: The mapped error type if found, otherwise the default error type
+
+        Raises:
+            TypeError: If the provided exc argument is not an Exception instance
 
         Example:
-            Given an inheritance chain: HTTPError -> RequestException -> Exception
-            The method will attempt to find mappings in this order:
+            Given an inheritance chain: HTTPError -> RequestException -> Exception -> object
+            The method will check mappings in this order:
             1. HTTPError
             2. RequestException
-            3. Returns default_error_type if no mapping is found
+            3. Exception
+            4. Returns default_error_type if no mapping is found
         """
         if not isinstance(exc, Exception):
             raise TypeError(f"Expected Exception, got {type(exc)}")
@@ -119,7 +124,7 @@ class ExceptionMapper:
 
         # Walk up the inheritance hierarchy
         for exc_class in exc_mro:
-            if exc_class.__name__ == "Exception":
+            if exc_class.__name__ == "object":
                 break
 
             mapped_type = cls.get_error_type(

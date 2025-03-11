@@ -6,6 +6,8 @@ error types. The mappings are organized by module namespace for better organizat
 and maintainability.
 """
 
+DEFAULT_ERROR_TYPE = "unknown_error"
+
 EXCEPTION_MAPPINGS_BASE = {
     # Python built-in exceptions
     "builtins": {
@@ -23,6 +25,10 @@ EXCEPTION_MAPPINGS_BASE = {
         "NotImplementedError": "runtime_error",
         "ImportError": "runtime_error",
         "OSError": "runtime_error",
+
+        "Exception": DEFAULT_ERROR_TYPE,
+        "BaseException": DEFAULT_ERROR_TYPE,
+        "object": DEFAULT_ERROR_TYPE,
     },
 
     "json.decoder": {

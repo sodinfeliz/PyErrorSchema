@@ -3,7 +3,7 @@ import json
 import textwrap
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self, TypeVar
@@ -153,12 +153,13 @@ class ErrorSchema(BaseModel):
             exc (Exception): The exception to create an error schema from.
             **kwargs: Additional keyword arguments to pass to the error schema.
         """
+        # Check if the exception is an instance of Exception
+        if not isinstance(exc, Exception):
+            raise TypeError(f"Expected Exception, got {type(exc)}")
+
         # If the exception is already an error schema, return it
         if isinstance(exc.args[0], cls):
             return exc.args[0]
-
-        # At this point, exc is an Exception
-        exc = cast(Exception, exc)
 
         # Get the cause (explicit) or context (implicit) of the exception
         cause = exc.__cause__ or exc.__context__
