@@ -38,7 +38,7 @@ class ErrorSchema(BaseModel):
         ]
 
     @classmethod
-    def get_mapping(cls) -> dict:
+    def get_mapping(cls) -> Dict[str, Dict[str, str]]:
         """Get the mapping between exception types and error types."""
         return ExceptionMapper.get_mapping(cls.__name__)
 
