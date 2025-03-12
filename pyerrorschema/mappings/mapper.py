@@ -124,7 +124,7 @@ class ExceptionMapper:
 
         # Walk up the inheritance hierarchy
         for exc_class in exc_mro:
-            if exc_class.__name__ == "object":
+            if exc_class.__name__ == "BaseException":
                 break
 
             mapped_type = cls.get_error_type(
