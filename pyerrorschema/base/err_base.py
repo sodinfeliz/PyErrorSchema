@@ -38,7 +38,7 @@ class ErrorSchema(BaseModel):
         ]
 
     @classmethod
-    def get_mapping(cls) -> dict:
+    def get_mapping(cls) -> Dict[str, Dict[str, str]]:
         """Get the mapping between exception types and error types."""
         return ExceptionMapper.get_mapping(cls.__name__)
 
@@ -146,7 +146,21 @@ class ErrorSchema(BaseModel):
         Automatically maps exceptions to appropriate error schemas based on their type.
         Captures both the primary exception and any chained exceptions (from either
         explicit 'raise ... from' or implicit exception chaining).
+
+        If the exception is already an error schema, it will be returned directly.
+
+        Args:
+            exc (Exception): The exception to create an error schema from.
+            **kwargs: Additional keyword arguments to pass to the error schema.
         """
+        # Check if the exception is an instance of Exception
+        if not isinstance(exc, Exception):
+            raise TypeError(f"Expected Exception, got {type(exc)}")
+
+        # If the exception is already an error schema, return it
+        if isinstance(exc.args[0], cls):
+            return exc.args[0]
+
         # Get the cause (explicit) or context (implicit) of the exception
         cause = exc.__cause__ or exc.__context__
         error_type = ExceptionMapper.get_error_type_from_exception(cls.__name__, exc)
@@ -305,11 +319,11 @@ class ErrorSchema(BaseModel):
             )
 
         @classmethod
-        def deleting(cls, path: str, **kwargs):
-            """Deleting error for a given path."""
+        def removing(cls, path: str, **kwargs):
+            """Removing error for a given path."""
             path_type = cls._path_type(path)
             return get_parent_class(cls).file_error(
-                msg=f"Deleting {path_type} '{path}' failed.", **kwargs,
+                msg=f"Removing {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
@@ -321,13 +335,13 @@ class ErrorSchema(BaseModel):
             )
 
         @classmethod
-        def saving(cls, path: str, **kwargs):
-            """Saving error for a given path.
+        def updating(cls, path: str, **kwargs):
+            """Updating error for a given path.
 
             only file is supported for this method.
             """
             return get_parent_class(cls).file_error(
-                msg=f"Saving file '{path}' failed.", **kwargs,
+                msg=f"Updating file '{path}' failed.", **kwargs,
             )
 
     class Map(Base):
@@ -354,6 +368,7 @@ class ErrorSchema(BaseModel):
             return get_parent_class(cls).database_error(
                 msg=f"No results found while {desc}.", **kwargs,
             )
+
         @classmethod
         def foreign_key_violation(cls, **kwargs):
             """Foreign key violation error."""
@@ -361,27 +376,7 @@ class ErrorSchema(BaseModel):
                 msg="Foreign key violation occurred.", **kwargs,
             )
 
-    class Parse(Base):
-        display_name: str = "Parse"
-
-        @classmethod
-        def invalid_format(cls, expected_format: str, actual_format: str, **kwargs):
-            """Invalid format error."""
-            return get_parent_class(cls).parse_error(
-                msg=f"Expected format '{expected_format}', but got '{actual_format}'.", **kwargs,
-            )
-
-        @classmethod
-        def inputs_length_inconsistent(cls, **kwargs):
-            """Inputs length inconsistent error."""
-            return get_parent_class(cls).parse_error(
-                msg="The length of inputs is inconsistent.", **kwargs,
-            )
-
     class Value(Base): ...
-
+    class Parse(Base): ...
     class Runtime(Base): ...
-
-    class Assumbly(Base): ...
-
     class Unknown(Base): ...

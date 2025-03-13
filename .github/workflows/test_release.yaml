@@ -1,20 +1,15 @@
-name: Build and Release
+name: Build and Release on Test PyPI
 
 on:
-  release:
-    types:
-      - published
-
-permissions:
-  contents: read
+  workflow_dispatch:
 
 jobs:
-  build-release:
+  test-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.target_commitish }}
+          ref: ${{ github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,13 +21,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install build twine -r requirements/build.txt
-
+          
       - name: Build distribution files
         run: python -m build
-
-      - name: Upload to PyPI
+  
+      - name: Upload to Test PyPI
         run: |
-          python -m twine upload dist/*
+          python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.TESTPYPI_API_TOKEN }}
