@@ -6,7 +6,7 @@ error types. The mappings are organized by module namespace for better organizat
 and maintainability.
 """
 
-DEFAULT_ERROR_TYPE = "unknown_error"
+DEFAULT_ERROR_TYPE = "runtime_error"
 
 EXCEPTION_MAPPINGS_BASE = {
     # Python built-in exceptions

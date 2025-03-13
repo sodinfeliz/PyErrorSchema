@@ -319,11 +319,11 @@ class ErrorSchema(BaseModel):
             )
 
         @classmethod
-        def deleting(cls, path: str, **kwargs):
-            """Deleting error for a given path."""
+        def removing(cls, path: str, **kwargs):
+            """Removing error for a given path."""
             path_type = cls._path_type(path)
             return get_parent_class(cls).file_error(
-                msg=f"Deleting {path_type} '{path}' failed.", **kwargs,
+                msg=f"Removing {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
@@ -335,13 +335,13 @@ class ErrorSchema(BaseModel):
             )
 
         @classmethod
-        def saving(cls, path: str, **kwargs):
-            """Saving error for a given path.
+        def updating(cls, path: str, **kwargs):
+            """Updating error for a given path.
 
             only file is supported for this method.
             """
             return get_parent_class(cls).file_error(
-                msg=f"Saving file '{path}' failed.", **kwargs,
+                msg=f"Updating file '{path}' failed.", **kwargs,
             )
 
     class Map(Base):
@@ -368,6 +368,7 @@ class ErrorSchema(BaseModel):
             return get_parent_class(cls).database_error(
                 msg=f"No results found while {desc}.", **kwargs,
             )
+
         @classmethod
         def foreign_key_violation(cls, **kwargs):
             """Foreign key violation error."""
@@ -375,27 +376,7 @@ class ErrorSchema(BaseModel):
                 msg="Foreign key violation occurred.", **kwargs,
             )
 
-    class Parse(Base):
-        display_name: str = "Parse"
-
-        @classmethod
-        def invalid_format(cls, expected_format: str, actual_format: str, **kwargs):
-            """Invalid format error."""
-            return get_parent_class(cls).parse_error(
-                msg=f"Expected format '{expected_format}', but got '{actual_format}'.", **kwargs,
-            )
-
-        @classmethod
-        def inputs_length_inconsistent(cls, **kwargs):
-            """Inputs length inconsistent error."""
-            return get_parent_class(cls).parse_error(
-                msg="The length of inputs is inconsistent.", **kwargs,
-            )
-
     class Value(Base): ...
-
+    class Parse(Base): ...
     class Runtime(Base): ...
-
-    class Assumbly(Base): ...
-
     class Unknown(Base): ...
