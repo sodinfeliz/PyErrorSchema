@@ -26,7 +26,7 @@ class ExceptionMapper:
 
     _default_schema_name: Final[str] = "ErrorSchema"
     _default_error_type: Final[str] = DEFAULT_ERROR_TYPE
-    _valid_schemas: ClassVar[frozenset[str]] = frozenset(SCHEMA_TO_MAPPINGS.keys())
+    _valid_schemas: ClassVar[frozenset] = frozenset(SCHEMA_TO_MAPPINGS.keys())
 
     @classmethod
     def validate_schema(cls, schema_name: str):
