@@ -1,5 +1,11 @@
+"""Exception to error type mapping utility for PyErrorSchema.
+
+This module provides the ExceptionMapper class which handles mapping Python exceptions
+to standardized error types based on configured schema mappings.
+"""
+
 from functools import lru_cache
-from typing import ClassVar, Dict, Final, Optional
+from typing import ClassVar, Dict, Final, Optional, Tuple
 
 from .exceptions import (
     DEFAULT_ERROR_TYPE,
@@ -29,7 +35,7 @@ class ExceptionMapper:
     _valid_schemas: ClassVar[frozenset] = frozenset(SCHEMA_TO_MAPPINGS.keys())
 
     @classmethod
-    def validate_schema(cls, schema_name: str):
+    def validate_schema(cls, schema_name: str) -> None:
         """Validate that the schema name is known."""
         if schema_name not in cls._valid_schemas:
             raise ValueError(
@@ -119,7 +125,7 @@ class ExceptionMapper:
             raise TypeError(f"Expected Exception, got {type(exc)}")
 
         # Get the MRO of the exception
-        exc_mro: tuple[type, ...] = exc.__class__.__mro__
+        exc_mro: Tuple[type, ...] = exc.__class__.__mro__
         error_type = cls._default_error_type
 
         # Walk up the inheritance hierarchy
@@ -139,7 +145,7 @@ class ExceptionMapper:
         return error_type
 
     @classmethod
-    def clear_caches(cls):
+    def clear_caches(cls) -> None:
         """Clear all cached mappings."""
         cls.get_mapping.cache_clear()
         cls.get_error_type.cache_clear()
