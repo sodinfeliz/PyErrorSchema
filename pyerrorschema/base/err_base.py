@@ -10,15 +10,15 @@ import json
 import textwrap
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Self, TypeVar
+from typing_extensions import Self
 
 from ..mappings import ExceptionMapper
 from ..utils import get_parent_class, restrict_arguments
 
-ErrorSchemaType = TypeVar("ErrorSchemaType", bound="ErrorSchema")
+ESType = TypeVar("ESType", bound="ErrorSchema")
 
 
 class ErrorSchema(BaseModel):
@@ -182,7 +182,7 @@ class ErrorSchema(BaseModel):
 
     ## Subclasses ##
 
-    class Base(ABC):
+    class Base(ABC, Generic[ESType]):
         """Base class for all error schema subclasses.
 
         This class provides a general error method for all error schema subclasses.
@@ -226,8 +226,8 @@ class ErrorSchema(BaseModel):
             *,
             action: Optional[str] = None,
             reason: Optional[str] = None,
-            **kwargs,
-        ):
+            **kwargs: Any,
+        ) -> ESType:
             """Create a general error instance for this error type.
 
             The error message will be formatted in one of two ways:
@@ -257,13 +257,11 @@ class ErrorSchema(BaseModel):
                 kwargs["msg"] = f"{name} error occurred since {reason}."
 
             error_method = f"{name.lower()}_error"
-            parent_cls = get_parent_class(cls)
-            if hasattr(parent_cls, error_method):
-                return getattr(parent_cls, error_method)(**kwargs)
+            parent_cls: ESType = get_parent_class(cls)
 
-            return get_parent_class(cls).customized_error(type=error_method, **kwargs)
+            return parent_cls.customized_error(type=error_method, **kwargs)
 
-    class File(Base):
+    class File(Base, Generic[ESType]):
         """Error schema for file operations.
 
         Provides methods for common file operation errors with automatic path type detection
@@ -286,104 +284,125 @@ class ErrorSchema(BaseModel):
             return "file" if Path(path).suffix else "directory"
 
         @classmethod
-        def not_found(cls, path: str, **kwargs):
+        def not_found(cls, path: str, **kwargs: Any) -> ESType:
             """File not found error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"{path_type.capitalize()} '{path}' not found.", **kwargs,
             )
 
         @classmethod
-        def already_exists(cls, path: str, **kwargs):
+        def already_exists(cls, path: str, **kwargs: Any) -> ESType:
             """File already exists error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"{path_type.capitalize()} '{path}' already exists.", **kwargs,
             )
 
         @classmethod
-        def creating(cls, path: str, **kwargs):
+        def creating(cls, path: str, **kwargs: Any) -> ESType:
             """Creating error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Creating {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def writing(cls, path: str, **kwargs):
+        def writing(cls, path: str, **kwargs: Any) -> ESType:
             """Writing error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Writing to {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def reading(cls, path: str, **kwargs):
+        def reading(cls, path: str, **kwargs: Any) -> ESType:
             """Reading error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Reading from {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def removing(cls, path: str, **kwargs):
+        def removing(cls, path: str, **kwargs: Any) -> ESType:
             """Removing error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Removing {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def copying(cls, path: str, **kwargs):
+        def copying(cls, path: str, **kwargs: Any) -> ESType:
             """Copying error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Copying {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def updating(cls, path: str, **kwargs):
+        def updating(cls, path: str, **kwargs: Any) -> ESType:
             """Updating error for a given path.
 
             only file is supported for this method.
             """
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Updating file '{path}' failed.", **kwargs,
             )
 
-    class Map(Base):
+    class Map(Base, Generic[ESType]):
         display_name: str = "Dict"
 
         @classmethod
-        def missing_keys(cls, keys: List[str], **kwargs):
+        def missing_keys(cls, keys: List[str], **kwargs: Any) -> ESType:
             """Missing keys error for a given keys."""
             concat_keys = "', '".join(keys)
-            return get_parent_class(cls).customized_error(
-                type="dict_error",
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Keys ('{concat_keys}') not found in dictionary.", **kwargs,
             )
 
-    class DB(Base):
+    class DB(Base, Generic[ESType]):
         display_name: str = "Database"
 
         @classmethod
-        def no_results(cls, desc: str, **kwargs):
+        def no_results(cls, desc: str, **kwargs: Any) -> ESType:
             """No results when querying a database.
 
             Format for the message: "No results found while <desc>."
             """
-            return get_parent_class(cls).database_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"No results found while {desc}.", **kwargs,
             )
 
         @classmethod
-        def foreign_key_violation(cls, **kwargs):
+        def foreign_key_violation(cls, **kwargs: Any) -> ESType:
             """Foreign key violation error."""
-            return get_parent_class(cls).database_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg="Foreign key violation occurred.", **kwargs,
             )
 
-    class Value(Base): ...
-    class Parse(Base): ...
-    class Runtime(Base): ...
-    class Unknown(Base): ...
+    class Value(Base, Generic[ESType]): ...
+    class Parse(Base, Generic[ESType]): ...
+    class Runtime(Base, Generic[ESType]): ...
+    class Unknown(Base, Generic[ESType]): ...
