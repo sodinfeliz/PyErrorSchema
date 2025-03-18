@@ -1,3 +1,8 @@
+"""FastAPI error group implementation for managing collections of FastAPI errors.
+
+This module provides specialized error group handling for FastAPI applications.
+"""
+
 from copy import deepcopy
 from typing import Iterator, List, Union
 
@@ -16,15 +21,19 @@ class FastAPIErrGroup(ErrGroup):
     """
 
     def __init__(self) -> None:
+        """Initialize an empty FastAPI error group."""
         self._error_schemas: List[FastAPIErrorSchema] = []
 
     def __iter__(self) -> Iterator[FastAPIErrorSchema]:
+        """Iterate over the FastAPIErrorSchema instances in the group."""
         return iter(self._error_schemas)
 
     def __getitem__(self, index: int) -> FastAPIErrorSchema:
-        return super().__getitem__(index)
+        """Get the FastAPIErrorSchema instance at the given index."""
+        return self._error_schemas[index]
 
     def __setitem__(self, index: int, value: FastAPIErrorSchema) -> None:
+        """Set the FastAPIErrorSchema instance at the given index."""
         if not isinstance(value, FastAPIErrorSchema):
             raise ValueError("The error schema must be an instance of FastAPIErrorSchema.")
         return super().__setitem__(index, value)

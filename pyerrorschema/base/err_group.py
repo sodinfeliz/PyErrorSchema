@@ -1,19 +1,31 @@
+"""Error group implementation for managing collections of error schemas.
+
+This module provides the ErrGroup class for organizing and manipulating
+multiple error schema instances as a cohesive unit.
+"""
+
 import json
 import textwrap
 from copy import deepcopy
-from typing import Any, List, Union
+from typing import Generic, Iterator, List, TypeVar, Union
 
 from typing_extensions import Self
 
 from ..base.err_base import ErrorSchema
 
+ESType = TypeVar("ESType", bound="ErrorSchema")
 
-class ErrGroup:
+
+class ErrGroup(Generic[ESType]):
+    """A group of error schemas."""
+
     def __init__(self) -> None:
-        self._error_schemas: list = []
+        """Initialize an empty error group."""
+        self._error_schemas: List[ESType] = []
 
     @property
-    def error_schemas(self) -> list:
+    def error_schemas(self) -> List[ESType]:
+        """Get the list of error schemas in the group."""
         return self._error_schemas
 
     def copy(self) -> Self:
@@ -25,20 +37,25 @@ class ErrGroup:
         self._error_schemas.clear()
 
     def __repr__(self) -> str:
+        """Represent the error group as a string."""
         errors_repr = ',\n'.join(repr(error) for error in self._error_schemas)
         indented_errors = textwrap.indent(errors_repr, '    ')
         return f"{self.__class__.__name__}(\n{indented_errors}\n)"
 
     def __len__(self) -> int:
+        """Get the number of error schemas in the group."""
         return len(self._error_schemas)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ESType]:
+        """Iterate over the error schemas in the group."""
         return iter(self._error_schemas)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> ESType:
+        """Get the error schema at the given index."""
         return self._error_schemas[index]
 
-    def __setitem__(self, index: int, value) -> None:
+    def __setitem__(self, index: int, value: ESType) -> None:
+        """Set the error schema at the given index."""
         if not isinstance(value, ErrorSchema):
             raise ValueError("The error schema must be an instance of ErrorSchema.")
         self._error_schemas[index] = value
@@ -59,7 +76,7 @@ class ErrGroup:
 
     ## Methods for modifying the error schemas ##
 
-    def append(self, error_schema: Any) -> None:
+    def append(self, error_schema: ESType) -> None:
         """Add an error schema to the group."""
         if not isinstance(error_schema, ErrorSchema):
             raise ValueError("The error schema must be an instance of ErrorSchema.")
