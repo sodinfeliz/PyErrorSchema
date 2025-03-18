@@ -157,4 +157,4 @@ Each error type has specialized factory methods that create appropriate error me
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the BSD License.
