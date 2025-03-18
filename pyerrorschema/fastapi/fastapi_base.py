@@ -1,3 +1,10 @@
+"""FastAPI-specific error schema implementation for PyErrorSchema.
+
+This module provides the FastAPIErrorSchema class, which extends the base ErrorSchema
+with additional functionality for FastAPI applications, including user-facing messages,
+location tracking, and specialized error types for web applications.
+"""
+
 import json
 from typing import Any, Dict, List, Optional
 
@@ -41,7 +48,6 @@ class FastAPIErrorSchema(ErrorSchema):
         Returns:
             error_dict (dict[str, Any]): The error schema as a dictionary.
         """
-
         if target == "frontend":
             return {
                 "msg": self.ui_msg or self.msg,
@@ -71,7 +77,7 @@ class FastAPIErrorSchema(ErrorSchema):
         error_type: str,
         default_msg: str,
         auto_loc: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> Self:
         """Base factory method to create an error schema instance.
 
@@ -91,6 +97,7 @@ class FastAPIErrorSchema(ErrorSchema):
         Args:
             error_type (str): The type of the error.
             default_msg (str): The default message of the error.
+            auto_loc (bool): Whether to automatically set the location.
             **kwargs: Additional keyword arguments including:
                 - exc: The exception that occurred.
                 - ui_msg: The message to display to the user.
@@ -121,13 +128,13 @@ class FastAPIErrorSchema(ErrorSchema):
 
     @classmethod
     @restrict_arguments("type")
-    def validation_error(cls, **kwargs) -> Self:
+    def validation_error(cls, **kwargs: Any) -> Self:
         """Factory method to create an instance for a validation error."""
         return cls._create_error("validation_error", "Validation error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
-    def docker_error(cls, **kwargs) -> Self:
+    def docker_error(cls, **kwargs: Any) -> Self:
         """Factory method to create an instance for a docker error."""
         return cls._create_error("docker_error", "Docker error occurred.", **kwargs)
 

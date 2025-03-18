@@ -1,3 +1,10 @@
+"""Base error schema classes and utilities for PyErrorSchema.
+
+This module defines the core ErrorSchema class and its specialized subclasses
+for different error types, providing a structured approach to error handling
+with standardized formats and factory methods.
+"""
+
 import inspect
 import json
 import textwrap
@@ -21,11 +28,13 @@ class ErrorSchema(BaseModel):
     msg: str = Field(default="")
 
     def __repr__(self) -> str:
+        """Return a string representation of the error schema."""
         attrs = [f"{k}={repr(v)}" for k, v in self.model_dump().items() if not k.startswith('_')]
         attrs_str = textwrap.indent(',\n'.join(attrs), '    ')
         return f"{self.__class__.__name__}(\n{attrs_str}\n)"
 
     def __str__(self) -> str:
+        """Return a string representation of the error schema."""
         return self.__repr__()
 
     @classmethod
@@ -58,7 +67,7 @@ class ErrorSchema(BaseModel):
     #######################
 
     @classmethod
-    def _create_error(cls, error_type: str, default_msg: str, **kwargs) -> Self:
+    def _create_error(cls, error_type: str, default_msg: str, **kwargs: Any) -> Self:
         """Base factory method to create an instance for an error.
 
         It will format the error message be like:
@@ -82,7 +91,6 @@ class ErrorSchema(BaseModel):
         Returns:
             ErrorSchema: The error schema instance.
         """
-
         msg = kwargs.pop("msg", default_msg)
         if "exc" in kwargs:
             msg += f" ({str(kwargs['exc'])})"
@@ -98,49 +106,49 @@ class ErrorSchema(BaseModel):
 
     @classmethod
     @restrict_arguments("type")
-    def database_error(cls, **kwargs) -> Self:
+    def database_error(cls, **kwargs: Any) -> Self:
         """Factory method to create an instance for a database error."""
         return cls._create_error("database_error", "Database error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
-    def file_error(cls, **kwargs) -> Self:
+    def file_error(cls, **kwargs: Any) -> Self:
         """Factory method to create an instance for a file error."""
         return cls._create_error("file_error", "File error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
-    def runtime_error(cls, **kwargs) -> Self:
+    def runtime_error(cls, **kwargs: Any) -> Self:
         """Factory method to create an instance for a runtime error."""
         return cls._create_error("runtime_error", "Runtime error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
-    def timeout_error(cls, **kwargs) -> Self:
+    def timeout_error(cls, **kwargs: Any) -> Self:
         """Factory method to create an instance for a timeout error."""
         return cls._create_error("timeout_error", "Timeout error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
-    def parse_error(cls, **kwargs) -> Self:
+    def parse_error(cls, **kwargs: Any) -> Self:
         """Factory method to create an instance for a parse error."""
         return cls._create_error("parse_error", "Parse error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
-    def value_error(cls, **kwargs) -> Self:
+    def value_error(cls, **kwargs: Any) -> Self:
         """Factory method to create an instance for a value error."""
         return cls._create_error("value_error", "Value error occurred.", **kwargs)
 
     @classmethod
-    def customized_error(cls, **kwargs) -> Self:
+    def customized_error(cls, **kwargs: Any) -> Self:
         """Factory method to create an instance for a customized error."""
         error_type = kwargs.pop("type", "customized_error")
         return cls._create_error(error_type, "Customized error occurred.", **kwargs)
 
 
     @classmethod
-    def from_exception(cls, exc: Exception, **kwargs) -> Self:
+    def from_exception(cls, exc: Exception, **kwargs: Any) -> Self:
         """Create an error schema instance from an exception.
 
         Automatically maps exceptions to appropriate error schemas based on their type.
@@ -239,7 +247,6 @@ class ErrorSchema(BaseModel):
             Returns:
                 An error instance with the formatted message.
             """
-
             if action and reason:
                 raise ValueError("Only one of 'action' or 'reason' should be provided.")
 

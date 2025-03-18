@@ -1,6 +1,12 @@
+"""Location utilities for error tracking in the FastAPI integration.
+
+This module provides functions to determine where errors occur in user code
+by examining the call stack and resolving file paths relative to the entry point.
+"""
+
 import inspect
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 import __main__
 
@@ -21,7 +27,7 @@ def _get_entrypoint() -> Optional[Path]:
     entrypoint = getattr(__main__, "__file__", None)
     if entrypoint is not None:
         entrypoint = Path(entrypoint).parent
-    return entrypoint
+    return cast(Optional[Path], entrypoint)
 
 
 def get_caller_location() -> Optional[str]:
