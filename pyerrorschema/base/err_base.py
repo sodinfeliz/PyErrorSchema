@@ -10,18 +10,24 @@ import json
 import textwrap
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Self, TypeVar
+from typing_extensions import Self
 
 from ..mappings import ExceptionMapper
 from ..utils import get_parent_class, restrict_arguments
 
-ErrorSchemaType = TypeVar("ErrorSchemaType", bound="ErrorSchema")
+ESType = TypeVar("ESType", bound="ErrorSchema")
 
 
 class ErrorSchema(BaseModel):
+    """Core class for error schemas in PyErrorSchema.
+
+    Provides a structured approach to error handling with standardized formats
+    and factory methods for creating error instances.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     type: str = Field(default="")
@@ -56,6 +62,7 @@ class ErrorSchema(BaseModel):
     #######################
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert the error schema to a dictionary."""
         return self.model_dump()
 
     def to_string(self) -> str:
@@ -68,20 +75,17 @@ class ErrorSchema(BaseModel):
 
     @classmethod
     def _create_error(cls, error_type: str, default_msg: str, **kwargs: Any) -> Self:
-        """Base factory method to create an instance for an error.
+        """Create an error schema instance with a formatted message.
 
-        It will format the error message be like:
-        <readable_error_type>: <msg>
+        This method serves as the core factory method for generating error instances.
+        It formats the error message in the form of "<readable_error_type>: <msg>",
+        where <readable_error_type> is the error type with underscores replaced by
+        spaces and capitalized (e.g., "validation_error" becomes "Validation error").
 
-        where <readable_error_type> is the error type with underscores replaced
-        by spaces and capitalized, e.g. "validation_error" -> "Validation error".
-        If the "exc" argument is provided, it will be used as the error message.
-        Otherwise, the "msg" argument will be used as the error message.
-
-        Priority order:
-        1. exc
-        2. msg
-        3. default_msg
+        The message is determined by the following priority:
+        1. If the "msg" argument is provided, it is used as the error message.
+        2. If the "exc" argument is provided, it is appended to the error message.
+        3. Otherwise, the "default_msg" is used.
 
         Args:
             error_type (str): The type of the error.
@@ -89,7 +93,7 @@ class ErrorSchema(BaseModel):
             **kwargs: Additional keyword arguments to pass to the error schema.
 
         Returns:
-            ErrorSchema: The error schema instance.
+            ErrorSchema: An instance of the error schema with the formatted message.
         """
         msg = kwargs.pop("msg", default_msg)
         if "exc" in kwargs:
@@ -182,7 +186,7 @@ class ErrorSchema(BaseModel):
 
     ## Subclasses ##
 
-    class Base(ABC):
+    class Base(ABC, Generic[ESType]):
         """Base class for all error schema subclasses.
 
         This class provides a general error method for all error schema subclasses.
@@ -226,8 +230,8 @@ class ErrorSchema(BaseModel):
             *,
             action: Optional[str] = None,
             reason: Optional[str] = None,
-            **kwargs,
-        ):
+            **kwargs: Any,
+        ) -> ESType:
             """Create a general error instance for this error type.
 
             The error message will be formatted in one of two ways:
@@ -257,13 +261,11 @@ class ErrorSchema(BaseModel):
                 kwargs["msg"] = f"{name} error occurred since {reason}."
 
             error_method = f"{name.lower()}_error"
-            parent_cls = get_parent_class(cls)
-            if hasattr(parent_cls, error_method):
-                return getattr(parent_cls, error_method)(**kwargs)
+            parent_cls: ESType = get_parent_class(cls)
 
-            return get_parent_class(cls).customized_error(type=error_method, **kwargs)
+            return parent_cls.customized_error(type=error_method, **kwargs)
 
-    class File(Base):
+    class File(Base[ESType]):
         """Error schema for file operations.
 
         Provides methods for common file operation errors with automatic path type detection
@@ -286,104 +288,179 @@ class ErrorSchema(BaseModel):
             return "file" if Path(path).suffix else "directory"
 
         @classmethod
-        def not_found(cls, path: str, **kwargs):
+        def not_found(cls, path: str, **kwargs: Any) -> ESType:
             """File not found error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"{path_type.capitalize()} '{path}' not found.", **kwargs,
             )
 
         @classmethod
-        def already_exists(cls, path: str, **kwargs):
+        def already_exists(cls, path: str, **kwargs: Any) -> ESType:
             """File already exists error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"{path_type.capitalize()} '{path}' already exists.", **kwargs,
             )
 
         @classmethod
-        def creating(cls, path: str, **kwargs):
+        def creating(cls, path: str, **kwargs: Any) -> ESType:
             """Creating error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Creating {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def writing(cls, path: str, **kwargs):
+        def writing(cls, path: str, **kwargs: Any) -> ESType:
             """Writing error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Writing to {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def reading(cls, path: str, **kwargs):
+        def reading(cls, path: str, **kwargs: Any) -> ESType:
             """Reading error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Reading from {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def removing(cls, path: str, **kwargs):
+        def removing(cls, path: str, **kwargs: Any) -> ESType:
             """Removing error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Removing {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def copying(cls, path: str, **kwargs):
+        def copying(cls, path: str, **kwargs: Any) -> ESType:
             """Copying error for a given path."""
             path_type = cls._path_type(path)
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Copying {path_type} '{path}' failed.", **kwargs,
             )
 
         @classmethod
-        def updating(cls, path: str, **kwargs):
+        def updating(cls, path: str, **kwargs: Any) -> ESType:
             """Updating error for a given path.
 
             only file is supported for this method.
             """
-            return get_parent_class(cls).file_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Updating file '{path}' failed.", **kwargs,
             )
 
-    class Map(Base):
+    class Map(Base[ESType]):
+        """Error schema for dictionary operations.
+
+        Provides methods for common dictionary operation errors with automatic
+        key concatenation for more precise error messages.
+
+        Examples:
+            >>> Map.general(action="reading config.json")
+            "Dict error occurred while reading config.json."
+
+            >>> Map.missing_keys(keys=["name", "age"])
+            "Keys ('name', 'age') not found in dictionary."
+        """
         display_name: str = "Dict"
 
         @classmethod
-        def missing_keys(cls, keys: List[str], **kwargs):
+        def missing_keys(cls, keys: List[str], **kwargs: Any) -> ESType:
             """Missing keys error for a given keys."""
             concat_keys = "', '".join(keys)
-            return get_parent_class(cls).customized_error(
-                type="dict_error",
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Keys ('{concat_keys}') not found in dictionary.", **kwargs,
             )
 
-    class DB(Base):
+    class DB(Base[ESType]):
+        """Error schema for database operations.
+
+        Provides methods for common database operation errors with automatic
+        description concatenation for more precise error messages.
+
+        Examples:
+            >>> DB.general(action="loading the data")
+            "Database error occurred while loading the data."
+
+            >>> DB.no_results(desc="while reading config.json")
+            "No results found while reading config.json."
+
+            >>> DB.foreign_key_violation()
+            "Foreign key violation occurred."
+        """
         display_name: str = "Database"
 
         @classmethod
-        def no_results(cls, desc: str, **kwargs):
+        def no_results(cls, desc: str, **kwargs: Any) -> ESType:
             """No results when querying a database.
 
             Format for the message: "No results found while <desc>."
             """
-            return get_parent_class(cls).database_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"No results found while {desc}.", **kwargs,
             )
 
         @classmethod
-        def foreign_key_violation(cls, **kwargs):
+        def foreign_key_violation(cls, **kwargs: Any) -> ESType:
             """Foreign key violation error."""
-            return get_parent_class(cls).database_error(
+            parent_cls: ESType = get_parent_class(cls)
+            return parent_cls.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg="Foreign key violation occurred.", **kwargs,
             )
 
-    class Value(Base): ...
-    class Parse(Base): ...
-    class Runtime(Base): ...
-    class Unknown(Base): ...
+    class Value(Base[ESType]):
+        """Error schema for value operations.
+
+        Provides methods for common value operation errors with automatic
+        description concatenation for more precise error messages.
+        """
+        ...
+
+    class Parse(Base[ESType]):
+        """Error schema for parsing operations.
+
+        Provides methods for common parsing operation errors with automatic
+        description concatenation for more precise error messages.
+        """
+        ...
+
+    class Runtime(Base[ESType]):
+        """Error schema for runtime operations.
+
+        Provides methods for common runtime operation errors with automatic
+        description concatenation for more precise error messages.
+        """
+        ...
+
+    class Unknown(Base[ESType]):
+        """Error schema for unknown operations.
+
+        Provides methods for common unknown operation errors with automatic
+        description concatenation for more precise error messages.
+        """
+        ...
