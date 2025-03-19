@@ -1,5 +1,4 @@
-"""
-Exception to error type mappings for PyErrorSchema.
+"""Exception to error type mappings for PyErrorSchema.
 
 This module contains the mappings between exception types and their corresponding
 error types. The mappings are organized by module namespace for better organization

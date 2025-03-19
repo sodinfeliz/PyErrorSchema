@@ -1,12 +1,18 @@
+"""FastAPI-specific error schema implementation for PyErrorSchema.
+
+This module provides the FastAPIErrorSchema class, which extends the base ErrorSchema
+with additional functionality for FastAPI applications, including user-facing messages,
+location tracking, and specialized error types for web applications.
+"""
+
 import json
 from typing import Any, Dict, List, Optional
 
 from pydantic import Field
-from typing_extensions import Self
 
 from ..base.err_base import ErrorSchema
 from ..types import MsgType
-from ..utils import get_parent_class, restrict_arguments
+from ..utils import restrict_arguments
 from .location import get_caller_location
 
 
@@ -41,7 +47,6 @@ class FastAPIErrorSchema(ErrorSchema):
         Returns:
             error_dict (dict[str, Any]): The error schema as a dictionary.
         """
-
         if target == "frontend":
             return {
                 "msg": self.ui_msg or self.msg,
@@ -71,8 +76,8 @@ class FastAPIErrorSchema(ErrorSchema):
         error_type: str,
         default_msg: str,
         auto_loc: bool = True,
-        **kwargs,
-    ) -> Self:
+        **kwargs: Any,
+    ) -> "FastAPIErrorSchema":
         """Base factory method to create an error schema instance.
 
         Error message will be formatted as:
@@ -91,6 +96,7 @@ class FastAPIErrorSchema(ErrorSchema):
         Args:
             error_type (str): The type of the error.
             default_msg (str): The default message of the error.
+            auto_loc (bool): Whether to automatically set the location.
             **kwargs: Additional keyword arguments including:
                 - exc: The exception that occurred.
                 - ui_msg: The message to display to the user.
@@ -121,35 +127,63 @@ class FastAPIErrorSchema(ErrorSchema):
 
     @classmethod
     @restrict_arguments("type")
-    def validation_error(cls, **kwargs) -> Self:
+    def validation_error(cls, **kwargs: Any) -> "FastAPIErrorSchema":
         """Factory method to create an instance for a validation error."""
         return cls._create_error("validation_error", "Validation error occurred.", **kwargs)
 
     @classmethod
     @restrict_arguments("type")
-    def docker_error(cls, **kwargs) -> Self:
+    def docker_error(cls, **kwargs: Any) -> "FastAPIErrorSchema":
         """Factory method to create an instance for a docker error."""
         return cls._create_error("docker_error", "Docker error occurred.", **kwargs)
 
     ## Subclasses - inherit from ErrorSchema ##
 
-    class Base(ErrorSchema.Base): ...
-    class File(ErrorSchema.File): ...
-    class Map(ErrorSchema.Map): ...
-    class DB(ErrorSchema.DB): ...
-    class Value(ErrorSchema.Value): ...
-    class Parse(ErrorSchema.Parse): ...
-    class Runtime(ErrorSchema.Runtime): ...
-    class Unknown(ErrorSchema.Unknown): ...
+    class Base(ErrorSchema.Base["FastAPIErrorSchema"]): ...
+    class File(ErrorSchema.File["FastAPIErrorSchema"]): ...
+    class Map(ErrorSchema.Map["FastAPIErrorSchema"]): ...
+    class DB(ErrorSchema.DB["FastAPIErrorSchema"]): ...
+    class Value(ErrorSchema.Value["FastAPIErrorSchema"]): ...
+    class Parse(ErrorSchema.Parse["FastAPIErrorSchema"]): ...
+    class Runtime(ErrorSchema.Runtime["FastAPIErrorSchema"]): ...
+    class Unknown(ErrorSchema.Unknown["FastAPIErrorSchema"]): ...
 
     ## Subclasses - for FastAPI ##
 
-    class Validation(ErrorSchema.Base): ...
+    class Validation(ErrorSchema.Base["FastAPIErrorSchema"]):
+        """Error schema for validation operations.
 
-    class Docker(ErrorSchema.Base):
+        Provides methods for common validation operation errors with automatic
+        description concatenation for more precise error messages.
+
+        Examples:
+            >>> Validation.general(action="validating the inputs")
+            "Validation error occurred while validating the inputs."
+        """
+        ...
+
+    class Docker(ErrorSchema.Base["FastAPIErrorSchema"]):
+        """Error schema for Docker operations.
+
+        Provides methods for common Docker operation errors with automatic
+        description concatenation for more precise error messages.
+
+        Examples:
+            >>> Docker.waiting(container="my_container")
+            "Failed when waiting for container 'my_container' to finish."
+
+            >>> Docker.running(container="my_container")
+            "Failed when running container 'my_container'."
+
+            >>> Docker.stopping(container="my_container")
+            "Failed when stopping container 'my_container'."
+
+            >>> Docker.removing(container="my_container")
+            "Failed when removing container 'my_container'."
+        """
 
         @classmethod
-        def waiting(cls, container: Optional[str] = None, **kwargs) -> Self:
+        def waiting(cls, container: Optional[str] = None, **kwargs: Any) -> "FastAPIErrorSchema":
             """Docker error when waiting for a container to finish.
 
             Args:
@@ -157,13 +191,14 @@ class FastAPIErrorSchema(ErrorSchema):
                 **kwargs: Additional keyword arguments.
             """
             container_msg = f"container '{container}'" if container else "a container"
-            return get_parent_class(cls).docker_error(
+            return FastAPIErrorSchema.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Failed when waiting for {container_msg} to finish.",
                 **kwargs,
             )
 
         @classmethod
-        def running(cls, container: Optional[str] = None, **kwargs) -> Self:
+        def running(cls, container: Optional[str] = None, **kwargs: Any) -> "FastAPIErrorSchema":
             """Docker error when running a container.
 
             Args:
@@ -171,13 +206,14 @@ class FastAPIErrorSchema(ErrorSchema):
                 **kwargs: Additional keyword arguments.
             """
             container_msg = f"container '{container}'" if container else "a container"
-            return get_parent_class(cls).docker_error(
+            return FastAPIErrorSchema.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Failed when running {container_msg}.",
                 **kwargs,
             )
 
         @classmethod
-        def starting(cls, container: Optional[str] = None, **kwargs) -> Self:
+        def starting(cls, container: Optional[str] = None, **kwargs: Any) -> "FastAPIErrorSchema":
             """Docker error when starting a container.
 
             Args:
@@ -185,13 +221,14 @@ class FastAPIErrorSchema(ErrorSchema):
                 **kwargs: Additional keyword arguments.
             """
             container_msg = f"container '{container}'" if container else "a container"
-            return get_parent_class(cls).docker_error(
+            return FastAPIErrorSchema.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Failed when starting {container_msg}.",
                 **kwargs,
             )
 
         @classmethod
-        def stopping(cls, container: Optional[str] = None, **kwargs) -> Self:
+        def stopping(cls, container: Optional[str] = None, **kwargs: Any) -> "FastAPIErrorSchema":
             """Docker error when stopping a container.
 
             Args:
@@ -199,13 +236,14 @@ class FastAPIErrorSchema(ErrorSchema):
                 **kwargs: Additional keyword arguments.
             """
             container_msg = f"container '{container}'" if container else "a container"
-            return get_parent_class(cls).docker_error(
+            return FastAPIErrorSchema.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Failed when stopping {container_msg}.",
                 **kwargs,
             )
 
         @classmethod
-        def removing(cls, container: Optional[str] = None, **kwargs) -> Self:
+        def removing(cls, container: Optional[str] = None, **kwargs: Any) -> "FastAPIErrorSchema":
             """Docker error when removing a container.
 
             Args:
@@ -213,7 +251,8 @@ class FastAPIErrorSchema(ErrorSchema):
                 **kwargs: Additional keyword arguments.
             """
             container_msg = f"container '{container}'" if container else "a container"
-            return get_parent_class(cls).docker_error(
+            return FastAPIErrorSchema.customized_error(
+                type=f"{cls._get_name().lower()}_error",
                 msg=f"Failed when removing {container_msg}.",
                 **kwargs,
             )
