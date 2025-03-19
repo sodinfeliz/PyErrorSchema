@@ -56,7 +56,11 @@ def get_caller_location() -> Optional[str]:
         line = frame.lineno
         function = frame.function
         if entrypoint:
-            filename = str(Path(filename).relative_to(entrypoint))
+            try:
+                filename = str(Path(filename).relative_to(entrypoint))
+            except ValueError:
+                # If the path doesn't start with entrypoint, use the absolute path
+                filename = str(Path(filename))
 
         return f"{filename}:{line}:{function}"
 
