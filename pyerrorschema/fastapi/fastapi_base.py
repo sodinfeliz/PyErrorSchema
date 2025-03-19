@@ -150,9 +150,37 @@ class FastAPIErrorSchema(ErrorSchema):
 
     ## Subclasses - for FastAPI ##
 
-    class Validation(ErrorSchema.Base["FastAPIErrorSchema"]): ...
+    class Validation(ErrorSchema.Base["FastAPIErrorSchema"]):
+        """Error schema for validation operations.
+
+        Provides methods for common validation operation errors with automatic
+        description concatenation for more precise error messages.
+
+        Examples:
+            >>> Validation.general(action="validating the inputs")
+            "Validation error occurred while validating the inputs."
+        """
+        ...
 
     class Docker(ErrorSchema.Base["FastAPIErrorSchema"]):
+        """Error schema for Docker operations.
+
+        Provides methods for common Docker operation errors with automatic
+        description concatenation for more precise error messages.
+
+        Examples:
+            >>> Docker.waiting(container="my_container")
+            "Failed when waiting for container 'my_container' to finish."
+
+            >>> Docker.running(container="my_container")
+            "Failed when running container 'my_container'."
+
+            >>> Docker.stopping(container="my_container")
+            "Failed when stopping container 'my_container'."
+
+            >>> Docker.removing(container="my_container")
+            "Failed when removing container 'my_container'."
+        """
 
         @classmethod
         def waiting(cls, container: Optional[str] = None, **kwargs: Any) -> "FastAPIErrorSchema":

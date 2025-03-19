@@ -22,6 +22,12 @@ ESType = TypeVar("ESType", bound="ErrorSchema")
 
 
 class ErrorSchema(BaseModel):
+    """Core class for error schemas in PyErrorSchema.
+
+    Provides a structured approach to error handling with standardized formats
+    and factory methods for creating error instances.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     type: str = Field(default="")
@@ -56,6 +62,7 @@ class ErrorSchema(BaseModel):
     #######################
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert the error schema to a dictionary."""
         return self.model_dump()
 
     def to_string(self) -> str:
@@ -68,20 +75,17 @@ class ErrorSchema(BaseModel):
 
     @classmethod
     def _create_error(cls, error_type: str, default_msg: str, **kwargs: Any) -> Self:
-        """Base factory method to create an instance for an error.
+        """Create an error schema instance with a formatted message.
 
-        It will format the error message be like:
-        <readable_error_type>: <msg>
+        This method serves as the core factory method for generating error instances.
+        It formats the error message in the form of "<readable_error_type>: <msg>",
+        where <readable_error_type> is the error type with underscores replaced by
+        spaces and capitalized (e.g., "validation_error" becomes "Validation error").
 
-        where <readable_error_type> is the error type with underscores replaced
-        by spaces and capitalized, e.g. "validation_error" -> "Validation error".
-        If the "exc" argument is provided, it will be used as the error message.
-        Otherwise, the "msg" argument will be used as the error message.
-
-        Priority order:
-        1. exc
-        2. msg
-        3. default_msg
+        The message is determined by the following priority:
+        1. If the "msg" argument is provided, it is used as the error message.
+        2. If the "exc" argument is provided, it is appended to the error message.
+        3. Otherwise, the "default_msg" is used.
 
         Args:
             error_type (str): The type of the error.
@@ -89,7 +93,7 @@ class ErrorSchema(BaseModel):
             **kwargs: Additional keyword arguments to pass to the error schema.
 
         Returns:
-            ErrorSchema: The error schema instance.
+            ErrorSchema: An instance of the error schema with the formatted message.
         """
         msg = kwargs.pop("msg", default_msg)
         if "exc" in kwargs:
@@ -261,7 +265,7 @@ class ErrorSchema(BaseModel):
 
             return parent_cls.customized_error(type=error_method, **kwargs)
 
-    class File(Base, Generic[ESType]):
+    class File(Base[ESType]):
         """Error schema for file operations.
 
         Provides methods for common file operation errors with automatic path type detection
@@ -365,7 +369,19 @@ class ErrorSchema(BaseModel):
                 msg=f"Updating file '{path}' failed.", **kwargs,
             )
 
-    class Map(Base, Generic[ESType]):
+    class Map(Base[ESType]):
+        """Error schema for dictionary operations.
+
+        Provides methods for common dictionary operation errors with automatic
+        key concatenation for more precise error messages.
+
+        Examples:
+            >>> Map.general(action="reading config.json")
+            "Dict error occurred while reading config.json."
+
+            >>> Map.missing_keys(keys=["name", "age"])
+            "Keys ('name', 'age') not found in dictionary."
+        """
         display_name: str = "Dict"
 
         @classmethod
@@ -378,7 +394,22 @@ class ErrorSchema(BaseModel):
                 msg=f"Keys ('{concat_keys}') not found in dictionary.", **kwargs,
             )
 
-    class DB(Base, Generic[ESType]):
+    class DB(Base[ESType]):
+        """Error schema for database operations.
+
+        Provides methods for common database operation errors with automatic
+        description concatenation for more precise error messages.
+
+        Examples:
+            >>> DB.general(action="loading the data")
+            "Database error occurred while loading the data."
+
+            >>> DB.no_results(desc="while reading config.json")
+            "No results found while reading config.json."
+
+            >>> DB.foreign_key_violation()
+            "Foreign key violation occurred."
+        """
         display_name: str = "Database"
 
         @classmethod
@@ -402,7 +433,34 @@ class ErrorSchema(BaseModel):
                 msg="Foreign key violation occurred.", **kwargs,
             )
 
-    class Value(Base, Generic[ESType]): ...
-    class Parse(Base, Generic[ESType]): ...
-    class Runtime(Base, Generic[ESType]): ...
-    class Unknown(Base, Generic[ESType]): ...
+    class Value(Base[ESType]):
+        """Error schema for value operations.
+
+        Provides methods for common value operation errors with automatic
+        description concatenation for more precise error messages.
+        """
+        ...
+
+    class Parse(Base[ESType]):
+        """Error schema for parsing operations.
+
+        Provides methods for common parsing operation errors with automatic
+        description concatenation for more precise error messages.
+        """
+        ...
+
+    class Runtime(Base[ESType]):
+        """Error schema for runtime operations.
+
+        Provides methods for common runtime operation errors with automatic
+        description concatenation for more precise error messages.
+        """
+        ...
+
+    class Unknown(Base[ESType]):
+        """Error schema for unknown operations.
+
+        Provides methods for common unknown operation errors with automatic
+        description concatenation for more precise error messages.
+        """
+        ...
